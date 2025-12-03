@@ -51,7 +51,7 @@ export default function CoursesPage() {
     ? students.filter((s) => {
           return s.departmentId === selectedCourse.departmentId;
         })
-        .sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''))
+        .sort((a, b) => (a.user?.name || '').localeCompare(b.user?.name || ''))
     : [];
 
   if (coursesLoading) {

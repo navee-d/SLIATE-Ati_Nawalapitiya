@@ -1,6 +1,5 @@
 import { sql, relations } from "drizzle-orm";
 import { pgTable, text, varchar, integer, timestamp, boolean, decimal, pgEnum } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Enums

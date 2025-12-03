@@ -56,12 +56,9 @@ export default function TimetablePage() {
   // Display max 5 courses at a time
   const displayedCourses = filteredCourses.slice(0, 5);
 
-  // Filter lecturers by category
-  const filteredLecturersByCategory = lecturers.filter((lecturer) => {
-    if (lecturerCategory === 'permanent') return lecturer.isHOD;
-    if (lecturerCategory === 'visiting') return !lecturer.isHOD;
-    return true;
-  });
+  // Filter lecturers by category - Note: No isVisiting field in schema, so showing all lecturers
+  // TODO: Add employment type field to lecturers table to distinguish permanent vs visiting
+  const filteredLecturersByCategory = lecturers;
 
   // Filter lecturers by search term (from category filtered list)
   const filteredLecturers = filteredLecturersByCategory.filter((lecturer) => {
