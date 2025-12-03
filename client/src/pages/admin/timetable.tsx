@@ -12,6 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Pencil, Trash2, Loader2, Calendar, Clock, MapPin, Users, BookOpen, UserCog, ArrowLeft } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import type { Course, LecturerWithUser } from '@shared/schema';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const TIME_SLOTS = ['07:00', '07:30', '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00'];
@@ -33,20 +34,20 @@ export default function TimetablePage() {
 
   const { toast } = useToast();
 
-  const { data: timetable = [], isLoading: loadingTimetable } = useQuery({
+  const { data: timetable = [], isLoading: loadingTimetable } = useQuery<any[]>({
     queryKey: ['/api/timetable'],
   });
 
-  const { data: courses = [] } = useQuery({
+  const { data: courses = [] } = useQuery<Course[]>({
     queryKey: ['/api/courses'],
   });
 
-  const { data: lecturers = [] } = useQuery({
+  const { data: lecturers = [] } = useQuery<LecturerWithUser[]>({
     queryKey: ['/api/lecturers'],
   });
 
   // Filter courses by search term
-  const filteredCourses = courses.filter((course: any) => {
+  const filteredCourses = courses.filter((course) => {
     const codeMatch = course.code?.toLowerCase().includes(courseSearchTerm.toLowerCase()) || false;
     const nameMatch = course.name?.toLowerCase().includes(courseSearchTerm.toLowerCase()) || false;
     return codeMatch || nameMatch;
@@ -55,15 +56,12 @@ export default function TimetablePage() {
   // Display max 5 courses at a time
   const displayedCourses = filteredCourses.slice(0, 5);
 
-  // Filter lecturers by category
-  const filteredLecturersByCategory = lecturers.filter((lecturer: any) => {
-    if (lecturerCategory === 'permanent') return !lecturer.isVisiting;
-    if (lecturerCategory === 'visiting') return lecturer.isVisiting;
-    return true;
-  });
+  // Filter lecturers by category - Note: No isVisiting field in schema, so showing all lecturers
+  // TODO: Add employment type field to lecturers table to distinguish permanent vs visiting
+  const filteredLecturersByCategory = lecturers;
 
   // Filter lecturers by search term (from category filtered list)
-  const filteredLecturers = filteredLecturersByCategory.filter((lecturer: any) => {
+  const filteredLecturers = filteredLecturersByCategory.filter((lecturer) => {
     const nameMatch = lecturer.user?.name?.toLowerCase().includes(lecturerSearchTerm.toLowerCase()) || false;
     const emailMatch = lecturer.user?.email?.toLowerCase().includes(lecturerSearchTerm.toLowerCase()) || false;
     return nameMatch || emailMatch;
@@ -292,7 +290,7 @@ export default function TimetablePage() {
                   isDialogOpen={isDialogOpen}
                   deletingEntry={deletingEntry}
                   onEditClick={handleEditClick}
-                  onDeleteClick={(entry) => setDeletingEntry(entry)}
+                  onDeleteClick={(entry: any) => setDeletingEntry(entry)}
                   onCloseDelete={() => setDeletingEntry(null)}
                   onCloseDialog={handleCloseDialog}
                   courses={courses}
@@ -392,7 +390,7 @@ export default function TimetablePage() {
                   isDialogOpen={isDialogOpen}
                   deletingEntry={deletingEntry}
                   onEditClick={handleEditClick}
-                  onDeleteClick={(entry) => setDeletingEntry(entry)}
+                  onDeleteClick={(entry: any) => setDeletingEntry(entry)}
                   onCloseDelete={() => setDeletingEntry(null)}
                   onCloseDialog={handleCloseDialog}
                   courses={courses}

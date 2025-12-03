@@ -13,21 +13,22 @@ import { useToast } from '@/hooks/use-toast';
 import { Plus, Search, Eye, Pencil, Trash2, Loader2, Users } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Link } from 'wouter';
+import type { LecturerWithUser, Department, Course } from '@shared/schema';
 
 export default function LecturersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  const { data: lecturers = [], isLoading } = useQuery({
+  const { data: lecturers = [], isLoading } = useQuery<LecturerWithUser[]>({
     queryKey: ['/api/lecturers'],
   });
 
-  const { data: departments = [] } = useQuery({
+  const { data: departments = [] } = useQuery<Department[]>({
     queryKey: ['/api/departments'],
   });
 
-  const { data: courses = [] } = useQuery({
+  const { data: courses = [] } = useQuery<Course[]>({
     queryKey: ['/api/courses'],
   });
 

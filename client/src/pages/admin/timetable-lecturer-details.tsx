@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Plus, Clock, BookOpen, MapPin, Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import type { LecturerWithUser, Course } from '@shared/schema';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const TIME_SLOTS = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
@@ -24,16 +25,16 @@ export default function TimetableLecturerDetailsPage() {
 
   const lecturerId = parseInt(id || '0');
 
-  const { data: lecturer, isLoading: lecturerLoading } = useQuery({
+  const { data: lecturer, isLoading: lecturerLoading } = useQuery<LecturerWithUser>({
     queryKey: ['/api/lecturers', lecturerId],
     enabled: lecturerId > 0,
   });
 
-  const { data: timetable = [], isLoading: timetableLoading } = useQuery({
+  const { data: timetable = [], isLoading: timetableLoading } = useQuery<any[]>({
     queryKey: ['/api/timetable'],
   });
 
-  const { data: courses = [] } = useQuery({
+  const { data: courses = [] } = useQuery<Course[]>({
     queryKey: ['/api/courses'],
   });
 

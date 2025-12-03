@@ -1,4 +1,5 @@
-import type { Express, Request, Response, NextFunction } from 'express';
+import type { Express, Response, NextFunction } from 'express';
+import type { Request } from 'express';
 import { createServer, type Server } from 'http';
 import { storage } from './storage';
 import { db } from './db';
@@ -13,6 +14,11 @@ import * as XLSX from 'xlsx';
 import { authLimiter } from './middleware/rateLimit';
 import { notificationService } from './services/notification';
 import { exportService } from './services/export';
+
+// Extend Request type for multer
+interface MulterRequest extends Request {
+  file?: Express.Multer.File;
+}
 
 if (!process.env.SESSION_SECRET) {
   throw new Error('SESSION_SECRET environment variable must be set');
@@ -557,7 +563,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({
         totalCourses: courses.length,
-        totalStudents: students.filter((s) => s.department.id === lecturer.departmentId).length,
+        totalStudents: students.filter((s) => s.department?.id === lecturer.departmentId).length,
         sessionsToday: lecturerSessionsToday.length,
       });
     } catch (error: any) {
@@ -675,7 +681,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
       // Get anti-cheat settings for department
-      const antiCheatSettings = await storage.getAntiCheatSettings(course.department.id);
+      const antiCheatSettings = course.department ? await storage.getAntiCheatSettings(course.department.id) : undefined;
 
       const session = await storage.createAttendanceSession({
         courseId,
@@ -1097,7 +1103,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { userId } = req.body;
       
       const pc = await storage.updatePC(pcId, {
-        assignedTo: userId,
+        assignedToUserId: userId,
         status: 'assigned',
       });
       
@@ -1124,7 +1130,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const pcId = parseInt(req.params.id);
       
       const pc = await storage.updatePC(pcId, {
-        assignedTo: null,
+        assignedToUserId: null,
         status: 'available',
       });
       
@@ -1279,7 +1285,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Import students from Excel/CSV
-  app.post('/api/admin/import-students', authenticateToken, requireRole('admin'), upload.single('file'), async (req: Request, res: Response) => {
+  app.post('/api/admin/import-students', authenticateToken, requireRole('admin'), upload.single('file'), async (req: MulterRequest, res: Response) => {
     try {
       if (!req.file) {
         return res.status(400).json({ message: 'No file provided' });

@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Calendar, QrCode, FileText, Library, TrendingUp } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Link } from 'wouter';
+import type { StudentStats } from '@/lib/api-types';
 
 export default function StudentDashboard() {
   const { user } = useAuth();
-  const { data: stats, isLoading } = useQuery({
+  const { data: stats, isLoading } = useQuery<StudentStats>({
     queryKey: ['/api/student/stats'],
   });
 

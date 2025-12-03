@@ -4,10 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { BookOpen, Calendar, Users, QrCode } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Link } from 'wouter';
+import type { LecturerStats } from '@/lib/api-types';
 
 export default function LecturerDashboard() {
   const { user } = useAuth();
-  const { data: stats, isLoading } = useQuery({
+  const { data: stats, isLoading } = useQuery<LecturerStats>({
     queryKey: ['/api/lecturer/stats'],
   });
 

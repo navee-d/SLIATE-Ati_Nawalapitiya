@@ -4,77 +4,54 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { BookOpen, Users, ArrowRight } from 'lucide-react';
+import type { Course, Department, LecturerWithUser, StudentWithUser, ExamApplication } from '@shared/schema';
 
-interface Course {
-  id: number;
-  code: string;
-  name: string;
-  departmentId: number;
-  lecturerId?: number;
-  credits?: number;
-  createdAt: string;
-  department?: { name: string; code: string };
-  lecturer?: { name: string };
-}
-
-interface Student {
-  id: number;
-  userId: number;
-  studentId: string;
-  name: string;
-  email: string;
+interface EnrichedCourse extends Course {
+  department?: Department;
+  lecturer?: LecturerWithUser;
 }
 
 export default function CoursesPage() {
-  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [selectedCourse, setSelectedCourse] = useState<EnrichedCourse | null>(null);
 
-  const { data: courses = [], isLoading: coursesLoading } = useQuery({
+  const { data: courses = [], isLoading: coursesLoading } = useQuery<Course[]>({
     queryKey: ['/api/courses'],
     enabled: true,
   });
 
-  const { data: examApps = [] } = useQuery({
+  const { data: examApps = [] } = useQuery<ExamApplication[]>({
     queryKey: ['/api/exam-applications'],
     enabled: true,
   });
 
-  const { data: students = [] } = useQuery({
+  const { data: students = [] } = useQuery<StudentWithUser[]>({
     queryKey: ['/api/students'],
     enabled: true,
   });
 
-  const { data: departments = [] } = useQuery({
+  const { data: departments = [] } = useQuery<Department[]>({
     queryKey: ['/api/departments'],
     enabled: true,
   });
 
-  const { data: lecturers = [] } = useQuery({
+  const { data: lecturers = [] } = useQuery<LecturerWithUser[]>({
     queryKey: ['/api/lecturers'],
     enabled: true,
   });
 
   // Enrich courses with department and lecturer info
-  const enrichedCourses = courses.map((course: any) => ({
+  const enrichedCourses: EnrichedCourse[] = courses.map((course) => ({
     ...course,
-    department: departments.find((d: any) => d.id === course.departmentId),
-    lecturer: lecturers.find((l: any) => l.id === course.lecturerId),
+    department: departments.find((d) => d.id === course.departmentId),
+    lecturer: lecturers.find((l) => l.id === course.lecturerId),
   }));
 
   // Get students for selected course - show all students in the course's department
   const courseStudents = selectedCourse
-    ? students
-        .filter((s: any) => {
-          if (!s) return false;
-          // Debug: log to see what's happening
-          if (!window.courseDebugLogged && students.length > 0) {
-            console.log('First student:', students[0]);
-            console.log('Selected course dept ID:', selectedCourse.departmentId);
-            console.log('All students:', students);
-            window.courseDebugLogged = true;
-          }
+    ? students.filter((s) => {
           return s.departmentId === selectedCourse.departmentId;
         })
-        .sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''))
+        .sort((a, b) => (a.user?.name || '').localeCompare(b.user?.name || ''))
     : [];
 
   if (coursesLoading) {
@@ -116,7 +93,7 @@ export default function CoursesPage() {
               {enrichedCourses.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No courses found</p>
               ) : (
-                enrichedCourses.map((course: Course) => (
+                enrichedCourses.map((course) => (
                   <button
                     key={course.id}
                     onClick={() => setSelectedCourse(course)}
@@ -174,7 +151,7 @@ export default function CoursesPage() {
                       Lecturer
                     </p>
                     <p className="font-semibold" data-testid="text-course-lecturer">
-                      {selectedCourse.lecturer?.name || 'Unassigned'}
+                      {selectedCourse.lecturer?.user?.name || 'Unassigned'}
                     </p>
                   </div>
                 </div>
@@ -191,7 +168,7 @@ export default function CoursesPage() {
                     </p>
                   ) : (
                     <div className="space-y-2 max-h-96 overflow-y-auto">
-                      {courseStudents.map((student: Student) => (
+                      {courseStudents.map((student) => (
                         <div
                           key={student.id}
                           className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors"
@@ -199,13 +176,13 @@ export default function CoursesPage() {
                         >
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-sm" data-testid={`text-student-name-${student.id}`}>
-                              {student.name}
+                              {student.user?.name}
                             </p>
                             <p className="text-xs text-muted-foreground" data-testid={`text-student-id-${student.id}`}>
                               {student.studentId}
                             </p>
                             <p className="text-xs text-muted-foreground truncate">
-                              {student.email}
+                              {student.user?.email}
                             </p>
                           </div>
                           <ArrowRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />

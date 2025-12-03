@@ -13,25 +13,26 @@ import { useToast } from '@/hooks/use-toast';
 import { Plus, Search, Eye, Pencil, Trash2, Loader2, Mail, Phone } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Link } from 'wouter';
+import type { LecturerWithUser, Department } from '@shared/schema';
 
 export default function VisitingLecturersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingLecturer, setEditingLecturer] = useState<any>(null);
-  const [deletingLecturer, setDeletingLecturer] = useState<any>(null);
+  const [editingLecturer, setEditingLecturer] = useState<LecturerWithUser | null>(null);
+  const [deletingLecturer, setDeletingLecturer] = useState<LecturerWithUser | null>(null);
   const { toast } = useToast();
 
-  const { data: lecturers = [], isLoading } = useQuery({
+  const { data: lecturers = [], isLoading } = useQuery<LecturerWithUser[]>({
     queryKey: ['/api/lecturers'],
   });
 
-  const { data: departments = [] } = useQuery({
+  const { data: departments = [] } = useQuery<Department[]>({
     queryKey: ['/api/departments'],
   });
 
-  const visitingLecturers = lecturers.filter((l: any) => !l.isHOD);
+  const visitingLecturers = lecturers.filter((l) => !l.isHOD);
 
-  const filteredLecturers = visitingLecturers.filter((lecturer: any) => {
+  const filteredLecturers = visitingLecturers.filter((lecturer) => {
     const lastNameMatch = lecturer.user?.name?.split(' ').pop()?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
     const nameMatch = lecturer.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
     const emailMatch = lecturer.user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) || false;

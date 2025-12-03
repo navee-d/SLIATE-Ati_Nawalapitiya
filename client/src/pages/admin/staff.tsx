@@ -12,33 +12,28 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Search, Pencil, Trash2, Loader2, Mail, Phone } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import type { User, Department } from '@shared/schema';
 
-interface StaffMember {
-  id: number;
-  email: string;
-  name: string;
-  phone?: string;
-  departmentId?: number;
-  role: string;
-  department?: { name: string; code: string };
+interface StaffMember extends User {
+  department?: Department;
 }
 
 export default function StaffPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingStaff, setEditingStaff] = useState<any>(null);
-  const [deletingStaff, setDeletingStaff] = useState<any>(null);
+  const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
+  const [deletingStaff, setDeletingStaff] = useState<StaffMember | null>(null);
   const { toast } = useToast();
 
-  const { data: users = [], isLoading } = useQuery({
+  const { data: users = [], isLoading } = useQuery<StaffMember[]>({
     queryKey: ['/api/users'],
   });
 
-  const { data: departments = [] } = useQuery({
+  const { data: departments = [] } = useQuery<Department[]>({
     queryKey: ['/api/departments'],
   });
 
-  const staffMembers = users.filter((u: any) => u.role === 'staff') as StaffMember[];
+  const staffMembers = users.filter((u) => u.role === 'staff');
 
   const filteredStaff = staffMembers.filter((staff) => {
     const lastNameMatch = staff.name?.split(' ').pop()?.toLowerCase().includes(searchTerm.toLowerCase()) || false;

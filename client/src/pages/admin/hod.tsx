@@ -13,25 +13,26 @@ import { useToast } from '@/hooks/use-toast';
 import { Plus, Search, Eye, Pencil, Trash2, Loader2, Crown, Mail, Phone } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Link } from 'wouter';
+import type { LecturerWithUser, Department } from '@shared/schema';
 
 export default function HODPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingHOD, setEditingHOD] = useState<any>(null);
+  const [editingHOD, setEditingHOD] = useState<LecturerWithUser | null>(null);
   const [deletingHOD, setDeletingHOD] = useState<any>(null);
   const { toast } = useToast();
 
-  const { data: lecturers = [], isLoading } = useQuery({
+  const { data: lecturers = [], isLoading } = useQuery<LecturerWithUser[]>({
     queryKey: ['/api/lecturers'],
   });
 
-  const { data: departments = [] } = useQuery({
+  const { data: departments = [] } = useQuery<Department[]>({
     queryKey: ['/api/departments'],
   });
 
-  const hods = lecturers.filter((l: any) => l.isHOD);
+  const hods = lecturers.filter((l) => l.isHOD);
 
-  const filteredHODs = hods.filter((hod: any) => {
+  const filteredHODs = hods.filter((hod) => {
     const lastNameMatch = hod.user?.name?.split(' ').pop()?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
     const nameMatch = hod.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
     const emailMatch = hod.user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) || false;

@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Clock, BookOpen, MapPin } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import type { StudentWithUser } from '@shared/schema';
 
 export default function TimetableStudentDetailsPage() {
   const { id } = useParams();
@@ -12,16 +13,16 @@ export default function TimetableStudentDetailsPage() {
 
   const studentId = parseInt(id || '0');
 
-  const { data: student, isLoading: studentLoading } = useQuery({
+  const { data: student, isLoading: studentLoading } = useQuery<StudentWithUser>({
     queryKey: ['/api/students', studentId],
     enabled: studentId > 0,
   });
 
-  const { data: timetable = [], isLoading: timetableLoading } = useQuery({
+  const { data: timetable = [], isLoading: timetableLoading } = useQuery<any[]>({
     queryKey: ['/api/timetable'],
   });
 
-  const { data: enrollments = [] } = useQuery({
+  const { data: enrollments = [] } = useQuery<any[]>({
     queryKey: ['/api/student-enrollments'],
   });
 
@@ -45,7 +46,7 @@ export default function TimetableStudentDetailsPage() {
           Back
         </Button>
         <div className="flex-1">
-          <h1 className="text-3xl font-bold tracking-tight">{student.name}</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{student.user?.name}</h1>
           <p className="text-muted-foreground">{student.studentId} • {student.department?.code}</p>
         </div>
       </div>

@@ -6,24 +6,25 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Link } from 'wouter';
 import { Search, Clock, BookOpen, MapPin, GraduationCap } from 'lucide-react';
+import type { StudentWithUser } from '@shared/schema';
 
 export default function TimetableStudentsPage() {
   const [searchTerm, setSearchTerm] = useState('');
 
-  const { data: students = [], isLoading } = useQuery({
+  const { data: students = [], isLoading } = useQuery<StudentWithUser[]>({
     queryKey: ['/api/students'],
   });
 
-  const { data: timetable = [] } = useQuery({
+  const { data: timetable = [] } = useQuery<any[]>({
     queryKey: ['/api/timetable'],
   });
 
-  const { data: enrollments = [] } = useQuery({
+  const { data: enrollments = [] } = useQuery<any[]>({
     queryKey: ['/api/student-enrollments'],
   });
 
-  const filteredStudents = students.filter((student: any) => {
-    const nameMatch = student.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
+  const filteredStudents = students.filter((student) => {
+    const nameMatch = student.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
     const studentIdMatch = student.studentId?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
     return nameMatch || studentIdMatch;
   });
