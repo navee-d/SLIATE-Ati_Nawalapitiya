@@ -349,68 +349,51 @@ export const antiCheatSettingsRelations = relations(antiCheatSettings, ({ one })
   }),
 }));
 
-// Insert schemas
-export const insertDepartmentSchema = createInsertSchema(departments).omit({ id: true, createdAt: true });
-export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
-export const insertStudentSchema = createInsertSchema(students).omit({ id: true, createdAt: true });
-export const insertLecturerSchema = createInsertSchema(lecturers).omit({ id: true, createdAt: true });
-export const insertCourseSchema = createInsertSchema(courses).omit({ id: true, createdAt: true });
-export const insertAttendanceSessionSchema = createInsertSchema(attendanceSessions).omit({ id: true, createdAt: true });
-export const insertAttendanceMarkSchema = createInsertSchema(attendanceMarks).omit({ id: true, createdAt: true });
-export const insertLabSchema = createInsertSchema(labs).omit({ id: true, createdAt: true });
-export const insertPCSchema = createInsertSchema(pcs).omit({ id: true, createdAt: true, updatedAt: true });
-export const insertBookSchema = createInsertSchema(books).omit({ id: true, createdAt: true });
-export const insertBookLoanSchema = createInsertSchema(bookLoans).omit({ id: true, createdAt: true });
-export const insertExamApplicationSchema = createInsertSchema(examApplications).omit({ id: true, createdAt: true, appliedAt: true });
-export const insertPaymentSchema = createInsertSchema(payments).omit({ id: true, createdAt: true });
-export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({ id: true, createdAt: true });
-export const insertAntiCheatSettingsSchema = createInsertSchema(antiCheatSettings).omit({ id: true, updatedAt: true });
-
-// Types
+// Insert schemas and types using Drizzle's $inferInsert
 export type Department = typeof departments.$inferSelect;
-export type InsertDepartment = z.infer<typeof insertDepartmentSchema>;
+export type InsertDepartment = typeof departments.$inferInsert;
 
 export type User = typeof users.$inferSelect;
-export type InsertUser = z.infer<typeof insertUserSchema>;
+export type InsertUser = typeof users.$inferInsert;
 
 export type Student = typeof students.$inferSelect;
-export type InsertStudent = z.infer<typeof insertStudentSchema>;
+export type InsertStudent = typeof students.$inferInsert;
 
 export type Lecturer = typeof lecturers.$inferSelect;
-export type InsertLecturer = z.infer<typeof insertLecturerSchema>;
+export type InsertLecturer = typeof lecturers.$inferInsert;
 
 export type Course = typeof courses.$inferSelect;
-export type InsertCourse = z.infer<typeof insertCourseSchema>;
+export type InsertCourse = typeof courses.$inferInsert;
 
 export type AttendanceSession = typeof attendanceSessions.$inferSelect;
-export type InsertAttendanceSession = z.infer<typeof insertAttendanceSessionSchema>;
+export type InsertAttendanceSession = typeof attendanceSessions.$inferInsert;
 
 export type AttendanceMark = typeof attendanceMarks.$inferSelect;
-export type InsertAttendanceMark = z.infer<typeof insertAttendanceMarkSchema>;
+export type InsertAttendanceMark = typeof attendanceMarks.$inferInsert;
 
 export type Lab = typeof labs.$inferSelect;
-export type InsertLab = z.infer<typeof insertLabSchema>;
+export type InsertLab = typeof labs.$inferInsert;
 
 export type PC = typeof pcs.$inferSelect;
-export type InsertPC = z.infer<typeof insertPCSchema>;
+export type InsertPC = typeof pcs.$inferInsert;
 
 export type Book = typeof books.$inferSelect;
-export type InsertBook = z.infer<typeof insertBookSchema>;
+export type InsertBook = typeof books.$inferInsert;
 
 export type BookLoan = typeof bookLoans.$inferSelect;
-export type InsertBookLoan = z.infer<typeof insertBookLoanSchema>;
+export type InsertBookLoan = typeof bookLoans.$inferInsert;
 
 export type ExamApplication = typeof examApplications.$inferSelect;
-export type InsertExamApplication = z.infer<typeof insertExamApplicationSchema>;
+export type InsertExamApplication = typeof examApplications.$inferInsert;
 
 export type Payment = typeof payments.$inferSelect;
-export type InsertPayment = z.infer<typeof insertPaymentSchema>;
+export type InsertPayment = typeof payments.$inferInsert;
 
 export type AuditLog = typeof auditLogs.$inferSelect;
-export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
+export type InsertAuditLog = typeof auditLogs.$inferInsert;
 
 export type AntiCheatSettings = typeof antiCheatSettings.$inferSelect;
-export type InsertAntiCheatSettings = z.infer<typeof insertAntiCheatSettingsSchema>;
+export type InsertAntiCheatSettings = typeof antiCheatSettings.$inferInsert;
 
 // Additional types for API responses with joined data
 export type StudentWithUser = Student & { user: User; department: Department };

@@ -2,9 +2,10 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, GraduationCap, BookOpen, Calendar, Monitor, Library, TrendingUp } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import type { AdminStats } from '@/lib/api-types';
 
 export default function AdminDashboard() {
-  const { data: stats, isLoading } = useQuery({
+  const { data: stats, isLoading } = useQuery<AdminStats>({
     queryKey: ['/api/admin/stats'],
   });
 

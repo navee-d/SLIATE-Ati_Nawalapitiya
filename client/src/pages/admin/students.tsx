@@ -30,10 +30,9 @@ export default function StudentsPage() {
   });
 
   const filteredStudents = students?.filter((student) =>
-    student.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     student.studentId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.user?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+    student.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    student.user?.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getProgramBadgeColor = (type: string) => {
@@ -133,10 +132,10 @@ export default function StudentsPage() {
                           {student.studentId}
                         </TableCell>
                         <TableCell className="font-medium" data-testid={`text-name-${student.id}`}>
-                          {student.name || student.user?.name || '-'}
+                          {student.user?.name || '-'}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground" data-testid={`text-email-${student.id}`}>
-                          {student.email || student.user?.email || '-'}
+                          {student.user?.email || '-'}
                         </TableCell>
                         <TableCell className="text-sm" data-testid={`text-phone-${student.id}`}>
                           {student.user?.phone || '-'}

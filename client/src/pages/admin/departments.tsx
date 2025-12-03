@@ -3,13 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Users, BookOpen, Grid3x3 } from 'lucide-react';
 import { Link } from 'wouter';
-
-interface Department {
-  id: number;
-  code: string;
-  name: string;
-  createdAt: string;
-}
+import type { Department, StudentWithUser, LecturerWithUser, Course } from '@shared/schema';
 
 interface DeptStats {
   dept: Department;
@@ -19,31 +13,31 @@ interface DeptStats {
 }
 
 export default function DepartmentsPage() {
-  const { data: departments = [], isLoading } = useQuery({
+  const { data: departments = [], isLoading } = useQuery<Department[]>({
     queryKey: ['/api/departments'],
     enabled: true,
   });
 
-  const { data: students = [] } = useQuery({
+  const { data: students = [] } = useQuery<StudentWithUser[]>({
     queryKey: ['/api/students'],
     enabled: true,
   });
 
-  const { data: lecturers = [] } = useQuery({
+  const { data: lecturers = [] } = useQuery<LecturerWithUser[]>({
     queryKey: ['/api/lecturers'],
     enabled: true,
   });
 
-  const { data: courses = [] } = useQuery({
+  const { data: courses = [] } = useQuery<Course[]>({
     queryKey: ['/api/courses'],
     enabled: true,
   });
 
   const deptStats: DeptStats[] = departments.map((dept: Department) => ({
     dept,
-    studentCount: students.filter((s: any) => s.departmentId === dept.id).length,
-    lecturerCount: lecturers.filter((l: any) => l.departmentId === dept.id).length,
-    courseCount: courses.filter((c: any) => c.departmentId === dept.id).length,
+    studentCount: students.filter((s) => s.departmentId === dept.id).length,
+    lecturerCount: lecturers.filter((l) => l.departmentId === dept.id).length,
+    courseCount: courses.filter((c) => c.departmentId === dept.id).length,
   }));
 
   const deptColors: Record<string, string> = {
