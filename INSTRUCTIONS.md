@@ -35,7 +35,7 @@ The SLIATE Campus Management System is a comprehensive full-stack web applicatio
    
    **Example `.env` file:**
    ```env
-   DATABASE_URL=postgresql://username:password@ep-hostname.region.neon.tech/database?sslmode=require
+   DATABASE_URL=postgresql://username:password@your-db-host.neon.tech/database?sslmode=require
    SESSION_SECRET=your-very-long-random-secret-key-here
    JWT_SECRET=your-jwt-secret-key-here
    ```
