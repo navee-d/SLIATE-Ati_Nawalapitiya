@@ -1,0 +1,62 @@
+You are an AI developer. Build a complete full-stack web application named "SLIATE Nawalapitiya Campus Management System" with the following delivered artifacts and behavior. Use Next.js with TypeScript for frontend and API routes, PostgreSQL with Prisma for database, Tailwind CSS for UI styling, and JWT authentication. Produce a runnable project with clear startup commands.
+
+Deliverables (automatically generated in repository):
+1. Full Next.js app (pages/app, pages/admin, pages/login, pages/student, pages/lecturer, pages/library, pages/lab, pages/exams, pages/import-export).
+2. Prisma schema reflecting the entities: departments, users, students, lecturers, courses, attendance_sessions, attendance_marks, labs, pcs, books, loans, exam_applications, payments, audit_logs.
+3. RESTful API routes for core operations:
+   - /api/auth (login/register JWT)
+   - /api/admin/* (admin-only endpoints)
+   - /api/students/, /api/lecturers/, /api/library/, /api/labs/, /api/exams/*
+   - /api/attendance/create-session, /api/attendance/scan (accept QR token and selfie)
+   - /api/import (accept XLSX/CSV to bulk import students/staff)
+   - /api/export (CSV/XLSX exports)
+4. QR attendance implementation:
+   - Server endpoint creates time-limited session QR token; QR encoded JSON {sessionId, token, expiresAt}.
+   - Frontend page to display QR on lecturer device (auto-refresh token).
+   - Mobile-friendly student scan page: use camera to read QR, capture selfie, send to /api/attendance/scan; server verifies token expiry and stores attendance mark with metadata.
+   - Include anti-cheat option toggles (photo required, OTP via SMS skeleton, optional device fingerprint).
+5. Excel import/export:
+   - Use xlsx library to parse uploads; validate rows and show validation report.
+   - Map columns: name, email, phone, dept_code, program_type, intake_year, student_number, student_id (optional).
+6. Lab & PC management:
+   - CRUD labs and PCs, assign/unassign PC to user.
+7. Library management:
+   - CRUD books, loan/return endpoints with due date and fine calculation.
+8. Exam applications & broadcast:
+   - Student forms for exam application types (regular, repeat, medical, assignment-only).
+   - Admin interface to broadcast a link to all students via WhatsApp/SMS—implement a configurable provider with placeholder environment vars (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, WHATSAPP_API_KEY). Provide example code for Twilio and a mock fallback if credentials not provided.
+9. Staff payroll & payment SMS:
+   - Staff payment records; endpoint to trigger SMS with payment details to staff phone (use placeholder/Twilio).
+10. Import/Export UI and sample CSV templates.
+11. Role-based access control – middleware enforcing Admin, Lecturer/HOD, Staff, Student roles.
+12. Tests and seed data script: seed departments, a few users for each role, a few sample courses, sample attendance sessions and sample PCs and books.
+13. README with setup & env variables, Prisma migrations, how to run locally, how to seed, and how to configure Twilio/WhatsApp placeholders.
+
+Important implementation details:
+- Provide a Student ID generator and validator using department codes and FT/PT code as described. Example normalized format: DEPT-NAW-2024-F-0208.
+- Include server-side logging of attendance (IP, user agent, selfie URL) for audit.
+- Implement a simple face-check placeholder that stores images and marks verified: false by default. Provide instructions in README how to plug in face-match service later.
+- Do not commit real API keys; read credentials from environment variables.
+- Provide an Admin-only page to configure anti-cheat options per department.
+- Provide clear UX for bulk import error handling (download CSV of invalid rows).
+- Add sample unit tests (Jest) for attendance token validation, student ID generator, and CSV import validator.
+
+User flows to support:
+- Admin: login → dashboard → manage departments, students (single + bulk), lecturers, labs, PCs, books, exam applications, payments; create attendance session (display QR).
+- Lecturer: login → their courses → create attendance session, view attendance of their classes, mark student attendance manually when needed.
+- Student: login → view their attendance history, scan QR page (mobile), apply for exam, borrow books, view results.
+- Staff: login → manage loans, manage lab PCs, see payment details.
+
+UI & visuals:
+- Use Tailwind UI-like components; provide clean responsive layout with separate admin menu and mobile scan view.
+- For QR generation/showing use qrcode.react or similar library.
+- For camera scanning use @zxing/browser or html5-qrcode integration.
+
+Prioritize building the full feature set above. Create high-quality, well-structured TypeScript code with comments. Provide a README with:
+- Setup steps (install, env vars, prisma migrate, seed, dev start).
+- How to test QR scanning on same machine (use mobile QR scanner or open mobile-friendly page).
+- How to configure Twilio/WhatsApp placeholders.
+
+Finally: create a small demo dataset with 10 students distributed across the 5 departments (FT and PT), 3 lecturers, 1 HOD per department, 1 lab with 10 PCs, 20 books seeded.
+
+End result: a runnable, documented Next.js + Prisma app that implements SLIATE Nawalapitiya campus management features described above and is ready for iterative improvements.
