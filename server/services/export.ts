@@ -100,10 +100,8 @@ class ExportService {
       'Student Name': payment.user?.name || '',
       'Student Email': payment.user?.email || '',
       'Amount': payment.amount,
-      'Payment Type': payment.paymentType,
-      'Payment Method': payment.paymentMethod,
+      'Description': payment.description || '',
       'Payment Date': payment.paymentDate ? new Date(payment.paymentDate).toLocaleDateString() : '',
-      'Reference Number': payment.referenceNumber || '',
       'SMS Sent': payment.smsSent ? 'Yes' : 'No',
       'SMS Timestamp': payment.smsTimestamp ? new Date(payment.smsTimestamp).toLocaleString() : '',
     }));
@@ -111,6 +109,7 @@ class ExportService {
 
   /**
    * Calculate fine for overdue books
+   * Fine rate: Rs. 5 per day (configurable via LIBRARY_FINE_PER_DAY env var)
    */
   private calculateFine(loan: any): number {
     if (loan.status === 'returned' || !loan.dueDate) return 0;
@@ -121,7 +120,7 @@ class ExportService {
     if (today <= dueDate) return 0;
 
     const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-    const finePerDay = 5; // Rs. 5 per day
+    const finePerDay = parseInt(process.env.LIBRARY_FINE_PER_DAY || '5'); // Default Rs. 5 per day
     
     return daysOverdue * finePerDay;
   }

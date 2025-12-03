@@ -51,9 +51,9 @@ class NotificationService {
     }
 
     try {
-      // Real Twilio integration would go here
-      // For now, we'll use the mock implementation
-      // TODO: Uncomment when Twilio SDK is added
+      // Real Twilio integration - requires Twilio SDK installation
+      // To enable: npm install twilio
+      // Then uncomment the code below
       /*
       const twilio = require('twilio');
       const client = twilio(this.config.twilioAccountSid, this.config.twilioAuthToken);
@@ -89,8 +89,8 @@ class NotificationService {
     }
 
     try {
-      // Real WhatsApp integration would go here
-      // TODO: Implement WhatsApp Business API integration
+      // Real WhatsApp integration - requires WhatsApp Business API setup
+      // To implement: Configure WhatsApp Business API credentials
       return this.mockSendWhatsApp(payload);
     } catch (error: any) {
       console.error('[Notification Service] WhatsApp send error:', error);
@@ -128,8 +128,8 @@ class NotificationService {
   /**
    * Send payment confirmation SMS
    */
-  async sendPaymentConfirmation(phone: string, studentName: string, amount: number, paymentType: string): Promise<{ success: boolean; messageId?: string; error?: string }> {
-    const message = `Dear ${studentName}, your payment of Rs. ${amount.toFixed(2)} for ${paymentType} has been received. Thank you. - SLIATE Nawalapitiya`;
+  async sendPaymentConfirmation(phone: string, studentName: string, amount: number, description: string): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    const message = `Dear ${studentName}, your payment of Rs. ${amount} for ${description} has been received. Thank you. - SLIATE Nawalapitiya`;
     
     return this.sendSMS({
       to: phone,

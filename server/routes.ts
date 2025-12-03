@@ -512,6 +512,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete a lecturer
+  app.delete('/api/lecturers/:id', authenticateToken, requireRole('admin'), async (req: Request, res: Response) => {
+    try {
+      const lecturerId = parseInt(req.params.id);
+      const lecturer = await storage.getLecturer(lecturerId);
+      
+      if (!lecturer) {
+        return res.status(404).json({ message: 'Lecturer not found' });
+      }
+
+      await storage.deleteLecturer(lecturerId);
+
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: `Deleted lecturer: ${lecturer.employeeId}`,
+        entityType: 'lecturer',
+        entityId: lecturerId,
+      });
+
+      res.json({ message: 'Lecturer deleted successfully' });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   app.get('/api/lecturer/stats', authenticateToken, requireRole('lecturer', 'hod'), async (req: Request, res: Response) => {
     try {
       const lecturer = await storage.getLecturerByUserId(req.user.id);
@@ -1170,15 +1195,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Get application details to send notification
-      const application = await storage.getAllExamApplications();
-      const app = application.find(a => a.id === applicationId);
+      const application = await storage.getExamApplication(applicationId);
       
-      if (app?.student?.user?.phone) {
+      if (application?.student?.user?.phone) {
         const { notificationService } = await import('./services/notification');
         await notificationService.sendExamApplicationUpdate(
-          app.student.user.phone,
-          app.student.user.name,
-          app.course?.name || 'Unknown Course',
+          application.student.user.phone,
+          application.student.user.name,
+          application.course?.name || 'Unknown Course',
           status
         );
       }
@@ -1227,8 +1251,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const paymentId = parseInt(req.params.id);
       
-      const allPayments = await storage.getAllPayments();
-      const payment = allPayments.find(p => p.id === paymentId);
+      const payment = await storage.getPayment(paymentId);
       
       if (!payment) {
         return res.status(404).json({ message: 'Payment not found' });
@@ -1239,8 +1262,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await notificationService.sendPaymentConfirmation(
           payment.user.phone,
           payment.user.name,
-          payment.amount,
-          payment.paymentType
+          parseFloat(payment.amount),
+          payment.description || 'Payment'
         );
       }
 

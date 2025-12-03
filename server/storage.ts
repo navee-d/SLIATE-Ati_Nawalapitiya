@@ -137,12 +137,14 @@ export interface IStorage {
 
   // Exam Applications
   createExamApplication(application: InsertExamApplication): Promise<ExamApplication>;
+  getExamApplication(id: number): Promise<any | undefined>;
   getAllExamApplications(): Promise<any[]>;
   getExamApplicationsByStudent(studentId: number): Promise<any[]>;
   updateExamApplicationStatus(id: number, status: string, reviewerId: number): Promise<boolean>;
 
   // Payments
   createPayment(payment: InsertPayment): Promise<Payment>;
+  getPayment(id: number): Promise<any | undefined>;
   getAllPayments(): Promise<any[]>;
   getPaymentsByUser(userId: number): Promise<Payment[]>;
   markPaymentSMSSent(id: number): Promise<boolean>;
@@ -266,7 +268,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateLecturer(id: number, updateData: Partial<InsertLecturer>): Promise<Lecturer | undefined> {
     const [lecturer] = await db.update(lecturers).set(updateData).where(eq(lecturers.id, id)).returning();
-    return lecturer || undefined;
+    return lecturer;
   }
 
   async deleteLecturer(id: number): Promise<boolean> {
@@ -542,9 +544,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createBook(insertBook: InsertBook): Promise<Book> {
-    const bookData = {
+    const bookData: any = {
       ...insertBook,
-      availableQuantity: insertBook.availableQuantity || insertBook.quantity,
+      availableQuantity: insertBook.availableQuantity ?? insertBook.quantity ?? 1,
     };
     const [book] = await db.insert(books).values(bookData).returning();
     return book;
@@ -627,6 +629,24 @@ export class DatabaseStorage implements IStorage {
     return application;
   }
 
+  async getExamApplication(id: number) {
+    const [result] = await db
+      .select()
+      .from(examApplications)
+      .leftJoin(students, eq(examApplications.studentId, students.id))
+      .leftJoin(users, eq(students.userId, users.id))
+      .leftJoin(courses, eq(examApplications.courseId, courses.id))
+      .where(eq(examApplications.id, id));
+    
+    if (!result) return undefined;
+    
+    return {
+      ...result.exam_applications,
+      student: result.students ? { ...result.students, user: result.users } : null,
+      course: result.courses,
+    };
+  }
+
   async getAllExamApplications() {
     const results = await db
       .select()
@@ -666,6 +686,18 @@ export class DatabaseStorage implements IStorage {
   async createPayment(insertPayment: InsertPayment): Promise<Payment> {
     const [payment] = await db.insert(payments).values(insertPayment).returning();
     return payment;
+  }
+
+  async getPayment(id: number) {
+    const [result] = await db
+      .select()
+      .from(payments)
+      .leftJoin(users, eq(payments.userId, users.id))
+      .where(eq(payments.id, id));
+    
+    if (!result) return undefined;
+    
+    return { ...result.payments, user: result.users };
   }
 
   async getAllPayments() {
