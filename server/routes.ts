@@ -10,6 +10,7 @@ import { nanoid } from 'nanoid';
 import { generateStudentID } from '../shared/student-id-generator';
 import multer from 'multer';
 import * as XLSX from 'xlsx';
+import { authLimiter } from './middleware/rateLimit';
 
 if (!process.env.SESSION_SECRET) {
   throw new Error('SESSION_SECRET environment variable must be set');
@@ -59,8 +60,8 @@ function requireRole(...roles: string[]) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Authentication routes
-  app.post('/api/auth/register', async (req: Request, res: Response) => {
+  // Authentication routes with rate limiting
+  app.post('/api/auth/register', authLimiter, async (req: Request, res: Response) => {
     try {
       const { email, password, name, role, departmentId } = req.body;
 
@@ -89,7 +90,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/auth/login', async (req: Request, res: Response) => {
+  app.post('/api/auth/login', authLimiter, async (req: Request, res: Response) => {
     try {
       const { email, password } = req.body;
 
@@ -154,8 +155,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ message: 'Logged out successfully' });
   });
 
-  // Change password
-  app.post('/api/auth/change-password', authenticateToken, async (req: Request, res: Response) => {
+  // Change password with rate limiting
+  app.post('/api/auth/change-password', authLimiter, authenticateToken, async (req: Request, res: Response) => {
     try {
       const { currentPassword, newPassword } = req.body;
       
