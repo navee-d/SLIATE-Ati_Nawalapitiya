@@ -22,12 +22,36 @@ The SLIATE Campus Management System is a comprehensive full-stack web applicatio
    npm install
    ```
 
-3. **Initialize Database**
+3. **Setup Environment Variables**
+   - Copy `.env.example` to `.env`:
+     ```bash
+     cp .env.example .env
+     ```
+   - Edit `.env` and set the required environment variables:
+     - `DATABASE_URL`: PostgreSQL connection string (Neon PostgreSQL)
+     - `SESSION_SECRET`: Random string for session encryption (generate a strong random string)
+     - `JWT_SECRET`: Random string for JWT token signing (generate a strong random string)
+     - Optional Twilio credentials for SMS notifications (can be left commented out)
+   
+   **Example `.env` file:**
+   ```env
+   DATABASE_URL=postgresql://username:password@your-db-host.neon.tech/database?sslmode=require
+   SESSION_SECRET=your-very-long-random-secret-key-here
+   JWT_SECRET=your-jwt-secret-key-here
+   ```
+
+4. **Initialize Database**
    ```bash
    npm run db:push
    ```
 
-4. **Start the Application**
+5. **Seed the Database (Optional)**
+   ```bash
+   npx tsx server/seed.ts
+   ```
+   This creates sample departments, users, courses, books, and lab equipment.
+
+6. **Start the Application**
    ```bash
    npm run dev
    ```
