@@ -5,42 +5,29 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Mail, Phone, BookOpen, Calendar, Award } from 'lucide-react';
 import { Link } from 'wouter';
-
-interface Student {
-  id: number;
-  userId: number;
-  studentId: string;
-  studentNumber: string;
-  name: string;
-  email: string;
-  phone?: string;
-  programType: 'FT' | 'PT';
-  intakeYear: number;
-  departmentId: number;
-  department?: { name: string; code: string };
-}
+import type { StudentWithUser, Department, ExamApplication, Course } from '@shared/schema';
 
 export default function StudentDetailsPage() {
   const [, params] = useRoute('/admin/students/:id');
   const studentId = parseInt(params?.id as string);
 
-  const { data: students = [] } = useQuery({
+  const { data: students = [] } = useQuery<StudentWithUser[]>({
     queryKey: ['/api/students'],
   });
 
-  const { data: departments = [] } = useQuery({
+  const { data: departments = [] } = useQuery<Department[]>({
     queryKey: ['/api/departments'],
   });
 
-  const { data: examApps = [] } = useQuery({
+  const { data: examApps = [] } = useQuery<ExamApplication[]>({
     queryKey: ['/api/exam-applications'],
   });
 
-  const { data: courses = [] } = useQuery({
+  const { data: courses = [] } = useQuery<Course[]>({
     queryKey: ['/api/courses'],
   });
 
-  const student = students.find((s: any) => s.id === studentId) as Student | undefined;
+  const student = students.find((s) => s.id === studentId);
 
   if (!student) {
     return (
@@ -63,11 +50,11 @@ export default function StudentDetailsPage() {
   }
 
   const enrolledCourses = examApps
-    .filter((app: any) => {
-      const appStudent = students.find((s: any) => s.id === app.studentId);
+    .filter((app) => {
+      const appStudent = students.find((s) => s.id === app.studentId);
       return appStudent?.id === studentId;
     })
-    .map((app: any) => courses.find((c: any) => c.id === app.courseId))
+    .map((app) => courses.find((c) => c.id === app.courseId))
     .filter(Boolean);
 
   return (

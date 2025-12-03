@@ -5,23 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Users, ArrowLeft, Mail, Award } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
-
-interface Department {
-  id: number;
-  code: string;
-  name: string;
-}
-
-interface Student {
-  id: number;
-  userId: number;
-  studentId: string;
-  name: string;
-  email: string;
-  programType: 'FT' | 'PT';
-  intakeYear: number;
-  departmentId: number;
-}
+import type { Department, StudentWithUser } from '@shared/schema';
 
 const deptFullNames: Record<string, string> = {
   ICT: 'Information & Communications Technology',
@@ -43,31 +27,24 @@ export default function DepartmentDetailsPage() {
   const [, params] = useRoute('/admin/departments/:code');
   const deptCode = params?.code as string;
 
-  const { data: departments = [] } = useQuery({
+  const { data: departments = [] } = useQuery<Department[]>({
     queryKey: ['/api/departments'],
   });
 
-  const { data: students = [] } = useQuery({
+  const { data: students = [] } = useQuery<StudentWithUser[]>({
     queryKey: ['/api/students'],
   });
 
-  const department = departments.find((d: Department) => d.code === deptCode);
+  const department = departments.find((d) => d.code === deptCode);
   if (!department) {
     return <div>Department not found</div>;
   }
 
-  const deptStudents = (students as Student[])
-    .filter((s: any) => {
-      if (!s || !s.name) return false;
-      // Debug: log student data to see structure
-      if (deptCode === 'ICT' && !window.debugLogged) {
-        console.log('Sample student:', s);
-        console.log('Department ID to match:', department.id);
-        window.debugLogged = true;
-      }
+  const deptStudents = students
+    .filter((s) => {
       return s.departmentId === department.id;
     })
-    .sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
+    .sort((a, b) => (a.user?.name || '').localeCompare(b.user?.name || ''));
 
   const ftCount = deptStudents.filter((s) => s.programType === 'FT').length;
   const ptCount = deptStudents.filter((s) => s.programType === 'PT').length;

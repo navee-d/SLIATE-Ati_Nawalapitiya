@@ -5,30 +5,31 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Mail, Phone, BookOpen, GraduationCap } from 'lucide-react';
 import { Link } from 'wouter';
+import type { LecturerWithUser, Department, Course } from '@shared/schema';
 
 export default function LecturerDetailsPage() {
   const [, params] = useRoute('/admin/lecturers/:id');
   const lecturerId = parseInt(params?.id as string);
 
-  const { data: lecturers = [] } = useQuery({
+  const { data: lecturers = [] } = useQuery<LecturerWithUser[]>({
     queryKey: ['/api/lecturers'],
   });
 
-  const { data: departments = [] } = useQuery({
+  const { data: departments = [] } = useQuery<Department[]>({
     queryKey: ['/api/departments'],
   });
 
-  const { data: courses = [] } = useQuery({
+  const { data: courses = [] } = useQuery<Course[]>({
     queryKey: ['/api/courses'],
   });
 
-  const lecturer = lecturers.find((l: any) => l.id === lecturerId);
+  const lecturer = lecturers.find((l) => l.id === lecturerId);
   const lecturerWithDetails = lecturer ? {
     ...lecturer,
-    department: departments.find((d: any) => d.id === lecturer.departmentId),
+    department: departments.find((d) => d.id === lecturer.departmentId),
   } : null;
 
-  const taughtCourses = courses.filter((c: any) => c.lecturerId === lecturerId);
+  const taughtCourses = courses.filter((c) => c.lecturerId === lecturerId);
 
   if (!lecturerWithDetails) {
     return (

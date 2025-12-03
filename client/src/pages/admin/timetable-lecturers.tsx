@@ -6,19 +6,20 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Link } from 'wouter';
 import { Search, Clock, BookOpen, MapPin } from 'lucide-react';
+import type { LecturerWithUser } from '@shared/schema';
 
 export default function TimetableLecturersPage() {
   const [searchTerm, setSearchTerm] = useState('');
 
-  const { data: lecturers = [], isLoading } = useQuery({
+  const { data: lecturers = [], isLoading } = useQuery<LecturerWithUser[]>({
     queryKey: ['/api/lecturers'],
   });
 
-  const { data: timetable = [] } = useQuery({
+  const { data: timetable = [] } = useQuery<any[]>({
     queryKey: ['/api/timetable'],
   });
 
-  const filteredLecturers = lecturers.filter((lecturer: any) => {
+  const filteredLecturers = lecturers.filter((lecturer) => {
     const nameMatch = lecturer.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
     const emailMatch = lecturer.user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
     return nameMatch || emailMatch;
