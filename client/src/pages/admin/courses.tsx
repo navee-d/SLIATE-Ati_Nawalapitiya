@@ -93,7 +93,7 @@ export default function CoursesPage() {
               {enrichedCourses.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No courses found</p>
               ) : (
-                enrichedCourses.map((course: Course) => (
+                enrichedCourses.map((course) => (
                   <button
                     key={course.id}
                     onClick={() => setSelectedCourse(course)}
@@ -151,7 +151,7 @@ export default function CoursesPage() {
                       Lecturer
                     </p>
                     <p className="font-semibold" data-testid="text-course-lecturer">
-                      {selectedCourse.lecturer?.name || 'Unassigned'}
+                      {selectedCourse.lecturer?.user?.name || 'Unassigned'}
                     </p>
                   </div>
                 </div>
@@ -168,7 +168,7 @@ export default function CoursesPage() {
                     </p>
                   ) : (
                     <div className="space-y-2 max-h-96 overflow-y-auto">
-                      {courseStudents.map((student: Student) => (
+                      {courseStudents.map((student) => (
                         <div
                           key={student.id}
                           className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors"
@@ -176,13 +176,13 @@ export default function CoursesPage() {
                         >
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-sm" data-testid={`text-student-name-${student.id}`}>
-                              {student.name}
+                              {student.user?.name}
                             </p>
                             <p className="text-xs text-muted-foreground" data-testid={`text-student-id-${student.id}`}>
                               {student.studentId}
                             </p>
                             <p className="text-xs text-muted-foreground truncate">
-                              {student.email}
+                              {student.user?.email}
                             </p>
                           </div>
                           <ArrowRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />

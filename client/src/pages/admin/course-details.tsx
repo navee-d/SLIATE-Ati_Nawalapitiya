@@ -5,18 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Users, BookOpen, Calendar } from 'lucide-react';
 import { Link } from 'wouter';
-
-interface Course {
-  id: number;
-  code: string;
-  name: string;
-  description?: string;
-  credits: number;
-  departmentId: number;
-  lecturerId?: number;
-  department?: { name: string; code: string };
-  lecturer?: { name: string };
-}
+import type { Course, Department, LecturerWithUser, StudentWithUser, ExamApplication } from '@shared/schema';
 
 interface Subject {
   id: number;
@@ -28,37 +17,37 @@ export default function CourseDetailsPage() {
   const [, params] = useRoute('/admin/courses/:id');
   const courseId = parseInt(params?.id as string);
 
-  const { data: courses = [] } = useQuery({
+  const { data: courses = [] } = useQuery<Course[]>({
     queryKey: ['/api/courses'],
   });
 
-  const { data: departments = [] } = useQuery({
+  const { data: departments = [] } = useQuery<Department[]>({
     queryKey: ['/api/departments'],
   });
 
-  const { data: lecturers = [] } = useQuery({
+  const { data: lecturers = [] } = useQuery<LecturerWithUser[]>({
     queryKey: ['/api/lecturers'],
   });
 
-  const { data: students = [] } = useQuery({
+  const { data: students = [] } = useQuery<StudentWithUser[]>({
     queryKey: ['/api/students'],
   });
 
-  const { data: examApps = [] } = useQuery({
+  const { data: examApps = [] } = useQuery<ExamApplication[]>({
     queryKey: ['/api/exam-applications'],
   });
 
-  const course = courses.find((c: any) => c.id === courseId);
+  const course = courses.find((c) => c.id === courseId);
   const courseWithDetails = course ? {
     ...course,
-    department: departments.find((d: any) => d.id === course.departmentId),
-    lecturer: lecturers.find((l: any) => l.id === course.lecturerId),
+    department: departments.find((d) => d.id === course.departmentId),
+    lecturer: lecturers.find((l) => l.id === course.lecturerId),
   } : null;
 
   // Fetch enrolled students
   const enrolledStudents = examApps
-    .filter((app: any) => app.courseId === courseId)
-    .map((app: any) => students.find((s: any) => s.id === app.studentId))
+    .filter((app) => app.courseId === courseId)
+    .map((app) => students.find((s) => s.id === app.studentId))
     .filter(Boolean);
 
   // Sample subjects based on course
@@ -150,7 +139,7 @@ export default function CourseDetailsPage() {
             <div>
               <label className="text-sm text-muted-foreground">Lecturer</label>
               <p className="font-medium mt-1" data-testid="text-lecturer">
-                {courseWithDetails.lecturer?.name || 'Unassigned'}
+                {courseWithDetails.lecturer?.user?.name || 'Unassigned'}
               </p>
             </div>
             <div>

@@ -114,7 +114,7 @@ export default function DepartmentDetailsPage() {
             </p>
           ) : (
             <div className="space-y-3">
-              {deptStudents.map((student: Student) => (
+              {deptStudents.map((student) => (
                 <Link key={student.id} href={`/admin/students/${student.id}`}>
                   <div
                     className="flex items-start justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer"
@@ -122,14 +122,14 @@ export default function DepartmentDetailsPage() {
                   >
                     <div className="flex-1">
                       <p className="font-semibold" data-testid={`text-name-${student.id}`}>
-                        {student.name}
+                        {student.user?.name}
                       </p>
                       <p className="text-sm text-muted-foreground mt-1">
                         {student.studentId}
                       </p>
                       <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
                         <Mail className="w-3 h-3" />
-                        {student.email}
+                        {student.user?.email}
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">

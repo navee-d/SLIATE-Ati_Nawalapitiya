@@ -21,7 +21,10 @@ export default function AttendanceSessionPage() {
   });
 
   const createSessionMutation = useMutation({
-    mutationFn: (courseId: number) => apiRequest('POST', '/api/attendance/create-session', { courseId }),
+    mutationFn: async (courseId: number) => {
+      const response = await apiRequest('POST', '/api/attendance/create-session', { courseId });
+      return await response.json();
+    },
     onSuccess: (data: AttendanceSession) => {
       setActiveSession(data);
       toast({ title: 'Success', description: 'Attendance session created' });

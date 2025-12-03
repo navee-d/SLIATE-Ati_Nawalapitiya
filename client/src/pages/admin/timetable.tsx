@@ -58,13 +58,13 @@ export default function TimetablePage() {
 
   // Filter lecturers by category
   const filteredLecturersByCategory = lecturers.filter((lecturer) => {
-    if (lecturerCategory === 'permanent') return !lecturer.isVisiting;
-    if (lecturerCategory === 'visiting') return lecturer.isVisiting;
+    if (lecturerCategory === 'permanent') return lecturer.isHOD;
+    if (lecturerCategory === 'visiting') return !lecturer.isHOD;
     return true;
   });
 
   // Filter lecturers by search term (from category filtered list)
-  const filteredLecturers = filteredLecturersByCategory.filter((lecturer: any) => {
+  const filteredLecturers = filteredLecturersByCategory.filter((lecturer) => {
     const nameMatch = lecturer.user?.name?.toLowerCase().includes(lecturerSearchTerm.toLowerCase()) || false;
     const emailMatch = lecturer.user?.email?.toLowerCase().includes(lecturerSearchTerm.toLowerCase()) || false;
     return nameMatch || emailMatch;
@@ -293,7 +293,7 @@ export default function TimetablePage() {
                   isDialogOpen={isDialogOpen}
                   deletingEntry={deletingEntry}
                   onEditClick={handleEditClick}
-                  onDeleteClick={(entry) => setDeletingEntry(entry)}
+                  onDeleteClick={(entry: any) => setDeletingEntry(entry)}
                   onCloseDelete={() => setDeletingEntry(null)}
                   onCloseDialog={handleCloseDialog}
                   courses={courses}
@@ -393,7 +393,7 @@ export default function TimetablePage() {
                   isDialogOpen={isDialogOpen}
                   deletingEntry={deletingEntry}
                   onEditClick={handleEditClick}
-                  onDeleteClick={(entry) => setDeletingEntry(entry)}
+                  onDeleteClick={(entry: any) => setDeletingEntry(entry)}
                   onCloseDelete={() => setDeletingEntry(null)}
                   onCloseDialog={handleCloseDialog}
                   courses={courses}

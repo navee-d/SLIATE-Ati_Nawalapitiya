@@ -67,7 +67,7 @@ export default function StudentDetailsPage() {
           </Button>
         </Link>
         <h1 className="text-3xl font-bold tracking-tight" data-testid="text-student-name">
-          {student.name}
+          {student.user?.name}
         </h1>
         <p className="text-muted-foreground mt-2" data-testid="text-student-id">
           {student.studentId}
@@ -86,17 +86,17 @@ export default function StudentDetailsPage() {
               <div className="flex items-center gap-2 mt-1">
                 <Mail className="w-4 h-4" />
                 <p className="font-medium" data-testid="text-email">
-                  {student.email}
+                  {student.user?.email}
                 </p>
               </div>
             </div>
-            {student.phone && (
+            {student.user?.phone && (
               <div>
                 <label className="text-sm text-muted-foreground">Phone</label>
                 <div className="flex items-center gap-2 mt-1">
                   <Phone className="w-4 h-4" />
                   <p className="font-medium" data-testid="text-phone">
-                    {student.phone}
+                    {student.user?.phone}
                   </p>
                 </div>
               </div>
