@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, GraduationCap, BookOpen, Calendar, Monitor, Library, TrendingUp } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Link } from 'wouter';
 import type { AdminStats } from '@/lib/api-types';
 
 export default function AdminDashboard() {
@@ -169,38 +170,38 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-3">
-              <a
+              <Link
                 href="/admin/students/new"
                 className="flex flex-col items-center gap-2 p-4 rounded-md bg-accent/50 hover-elevate active-elevate-2 transition-colors"
                 data-testid="link-add-student"
               >
                 <Users className="h-6 w-6 text-primary" />
                 <span className="text-xs font-medium text-center">Add Student</span>
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/lecturer/attendance/new"
                 className="flex flex-col items-center gap-2 p-4 rounded-md bg-accent/50 hover-elevate active-elevate-2 transition-colors"
                 data-testid="link-create-session"
               >
                 <Calendar className="h-6 w-6 text-primary" />
                 <span className="text-xs font-medium text-center">Create Session</span>
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/admin/import"
                 className="flex flex-col items-center gap-2 p-4 rounded-md bg-accent/50 hover-elevate active-elevate-2 transition-colors"
                 data-testid="link-import-data"
               >
                 <TrendingUp className="h-6 w-6 text-primary" />
                 <span className="text-xs font-medium text-center">Import Data</span>
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/admin/library"
                 className="flex flex-col items-center gap-2 p-4 rounded-md bg-accent/50 hover-elevate active-elevate-2 transition-colors"
                 data-testid="link-manage-library"
               >
                 <Library className="h-6 w-6 text-primary" />
                 <span className="text-xs font-medium text-center">Manage Library</span>
-              </a>
+              </Link>
             </div>
           </CardContent>
         </Card>

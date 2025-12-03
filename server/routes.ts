@@ -8,7 +8,7 @@ import { eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { nanoid } from 'nanoid';
-import { generateStudentID } from '../shared/student-id-generator';
+import { generateStudentID, getDepartmentCodes } from '../shared/student-id-generator';
 import multer from 'multer';
 import * as XLSX from 'xlsx';
 import { authLimiter } from './middleware/rateLimit';
@@ -1293,37 +1293,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-      
-      // Get raw data to find where headers actually start
-      const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
-      let headerRow = 0;
-      
-      // Parse all rows to find the header row
-      const rawData: any[] = [];
-      for (let i = range.s.r; i <= range.e.r; i++) {
-        const row: any = {};
-        for (let j = range.s.c; j <= range.e.c; j++) {
-          const cellAddress = XLSX.utils.encode_cell({ r: i, c: j });
-          const cell = worksheet[cellAddress];
-          row[j] = cell ? cell.v : null;
-        }
-        rawData.push(row);
+
+      // Parse rows once (preserves ordering used for processing)
+      type SheetCell = string | number | boolean | Date | null | undefined;
+      const data = XLSX.utils.sheet_to_json<SheetCell[]>(worksheet, {
+        header: 1,
+        blankrows: false,
+      }) as SheetCell[][];
+
+      if (!data.length) {
+        return res.status(400).json({ message: 'The uploaded sheet is empty.' });
       }
-      
-      // Find the header row (first row with email-like or name-like content)
-      for (let i = 0; i < rawData.length; i++) {
-        const row = rawData[i];
-        const rowStr = JSON.stringify(row).toLowerCase();
-        if (rowStr.includes('email') || rowStr.includes('name') || rowStr.includes('student')) {
+
+      // Detect the header row directly from parsed data to avoid index drift
+      let headerRow = 0;
+      for (let i = 0; i < data.length; i++) {
+        const row = data[i] || [];
+        const rowText = row
+          .map((cell) => String(cell ?? '').toLowerCase())
+          .join(' ');
+        if (rowText.includes('email') || rowText.includes('name') || rowText.includes('student')) {
           headerRow = i;
           break;
         }
       }
-      
-      // Parse with the correct header row
-      const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-      const actualKeys = data[headerRow] as string[];
+
+      const actualKeys = (data[headerRow] || []).map((cell) => String(cell ?? ''));
       const dataRows = data.slice(headerRow + 1);
+
+      if (!actualKeys.length) {
+        return res.status(400).json({
+          message: 'Could not detect header row. Please ensure the sheet contains column names like Email, Name, Department, etc.',
+        });
+      }
       
       const success: number[] = [];
       const failed: any[] = [];
@@ -1331,6 +1333,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get all departments for lookup
       const departments = await storage.getAllDepartments();
       const deptMap = new Map(departments.map((d) => [d.code.toUpperCase(), d]));
+      const preferredDeptCode = getDepartmentCodes()[0];
+      const fallbackDept = preferredDeptCode
+        ? deptMap.get(preferredDeptCode.toUpperCase()) ?? departments[0]
+        : departments[0];
 
       // Helper function to normalize column names for flexible matching
       const normalizeKey = (key: string) => key.toLowerCase().replace(/\s+/g, '').replace(/[_-]/g, '').trim();
@@ -1370,7 +1376,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const email = getValue(row, ['email', 'Email', 'e-mail', 'email address']);
           const name = getValue(row, ['name', 'Name', 'full name', 'fullname', 'student name']);
           const studentNumber = getValue(row, ['studentnumber', 'student number', 'StudentNumber', 'student_number', 'reg number', 'registration no.', 'new reg. no']);
-          const department = getValue(row, ['department', 'Department', 'dept', 'Dept', 'department code']) || 'ICT'; // Default to ICT
+          const department = getValue(row, ['department', 'Department', 'dept', 'Dept', 'department code'])
+            || fallbackDept?.code
+            || '';
           const programType = getValue(row, ['programtype', 'program type', 'ProgramType', 'program_type', 'type']) || 'FT'; // Default to FT
           const intakeYear = getValue(row, ['intakeyear', 'intake year', 'IntakeYear', 'intake_year', 'year']) || new Date().getFullYear();
           const phone = getValue(row, ['phone', 'Phone', 'telephone', 'contact']) || null;
@@ -1396,9 +1404,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Validate and normalize department
           let dept = deptMap.get(String(department).toUpperCase());
           if (!dept) {
-            // Try to find by partial match or use default
-            const depts = Array.from(deptMap.values());
-            dept = depts[0]; // Default to first department (ICT)
+            // Try to find by partial match or use configured fallback
+            dept = fallbackDept;
             if (!dept) {
               failed.push({
                 row: rowNum,

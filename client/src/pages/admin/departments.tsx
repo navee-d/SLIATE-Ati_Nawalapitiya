@@ -41,19 +41,19 @@ export default function DepartmentsPage() {
   }));
 
   const deptColors: Record<string, string> = {
-    ICT: 'bg-blue-100 text-blue-900 dark:bg-blue-900 dark:text-blue-100',
-    ENG: 'bg-green-100 text-green-900 dark:bg-green-900 dark:text-green-100',
-    BSM: 'bg-purple-100 text-purple-900 dark:bg-purple-900 dark:text-purple-100',
-    AGR: 'bg-amber-100 text-amber-900 dark:bg-amber-900 dark:text-amber-100',
-    ACT: 'bg-red-100 text-red-900 dark:bg-red-900 dark:text-red-100',
+    HNDIT: 'bg-blue-100 text-blue-900 dark:bg-blue-900 dark:text-blue-100',
+    HNDMG: 'bg-emerald-100 text-emerald-900 dark:bg-emerald-900 dark:text-emerald-100',
+    HNDTHM: 'bg-amber-100 text-amber-900 dark:bg-amber-900 dark:text-amber-100',
+    HNDE: 'bg-cyan-100 text-cyan-900 dark:bg-cyan-900 dark:text-cyan-100',
+    HNDBF: 'bg-purple-100 text-purple-900 dark:bg-purple-900 dark:text-purple-100',
   };
 
   const deptFullNames: Record<string, string> = {
-    ICT: 'Information & Communications Technology',
-    ENG: 'Engineering',
-    BSM: 'Business Studies & Management',
-    AGR: 'Agriculture & Environmental Science',
-    ACT: 'Accounting & Finance',
+    HNDIT: 'Higher National Diploma in Information Technology',
+    HNDMG: 'Higher National Diploma in Management',
+    HNDTHM: 'Higher National Diploma in Tourism & Hospitality Management',
+    HNDE: 'Higher National Diploma in Engineering',
+    HNDBF: 'Higher National Diploma in Business Finance',
   };
 
   if (isLoading) {

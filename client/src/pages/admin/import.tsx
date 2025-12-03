@@ -231,7 +231,7 @@ export default function ImportPage() {
                 </li>
                 <li className="flex gap-2">
                   <span className="font-mono text-primary">Department</span>
-                  <span className="text-muted-foreground">Department code (ICT, ENG, BSM, AGR, ACT)</span>
+                  <span className="text-muted-foreground">Department code (HNDIT, HNDMG, HNDTHM, HNDE, HNDBF)</span>
                 </li>
                 <li className="flex gap-2">
                   <span className="font-mono text-primary">ProgramType</span>
@@ -247,8 +247,8 @@ export default function ImportPage() {
               <h4 className="font-medium mb-2">Example CSV:</h4>
               <pre className="bg-muted p-3 rounded text-xs overflow-x-auto">
 {`Email,Name,StudentNumber,Department,ProgramType,IntakeYear
-john@sliate.ac.lk,John Doe,0201,ICT,FT,2024
-jane@sliate.ac.lk,Jane Smith,0202,ENG,PT,2024`}
+john@sliate.ac.lk,John Doe,0201,HNDIT,FT,2024
+jane@sliate.ac.lk,Jane Smith,0202,HNDMG,PT,2024`}
               </pre>
             </div>
           </CardContent>

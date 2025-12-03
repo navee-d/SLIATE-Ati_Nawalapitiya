@@ -11,11 +11,11 @@ async function seed() {
     // Create departments
     console.log('Creating departments...');
     const departments = [
-      { code: 'ICT', name: 'Information & Communication Technology' },
-      { code: 'ENG', name: 'Engineering' },
-      { code: 'BSM', name: 'Business & Management' },
-      { code: 'AGR', name: 'Agriculture' },
-      { code: 'ACT', name: 'Accountancy' },
+      { code: 'HNDIT', name: 'Higher National Diploma in Information Technology' },
+      { code: 'HNDMG', name: 'Higher National Diploma in Management' },
+      { code: 'HNDTHM', name: 'Higher National Diploma in Tourism & Hospitality Management' },
+      { code: 'HNDE', name: 'Higher National Diploma in Engineering' },
+      { code: 'HNDBF', name: 'Higher National Diploma in Business Finance' },
     ];
 
     const createdDepts = [];
@@ -157,11 +157,12 @@ async function seed() {
     console.log('Creating courses...');
     const courses = [];
     const courseData = [
-      { code: 'ICT101', name: 'Introduction to Programming', deptIndex: 0 },
-      { code: 'ICT201', name: 'Database Management', deptIndex: 0 },
-      { code: 'ENG101', name: 'Engineering Mathematics', deptIndex: 1 },
-      { code: 'BSM101', name: 'Business Fundamentals', deptIndex: 2 },
-      { code: 'AGR101', name: 'Agricultural Science', deptIndex: 3 },
+      { code: 'HNDIT101', name: 'Introduction to Programming', deptIndex: 0 },
+      { code: 'HNDIT201', name: 'Database Management', deptIndex: 0 },
+      { code: 'HNDMG101', name: 'Management Principles', deptIndex: 1 },
+      { code: 'HNDTHM101', name: 'Hospitality Operations', deptIndex: 2 },
+      { code: 'HNDE101', name: 'Engineering Mathematics', deptIndex: 3 },
+      { code: 'HNDBF101', name: 'Financial Accounting Basics', deptIndex: 4 },
     ];
 
     for (const courseInfo of courseData) {
@@ -186,7 +187,7 @@ async function seed() {
       name: 'Main Computer Lab',
       location: 'Building A, Floor 2',
       capacity: 30,
-      departmentId: createdDepts[0].id, // ICT department
+      departmentId: createdDepts[0].id,
     });
     console.log(`✓ Created lab: ${lab.name}`);
 
@@ -233,7 +234,7 @@ async function seed() {
         author: bookInfo.author,
         publisher: bookInfo.publisher,
         quantity: bookInfo.quantity,
-        departmentId: createdDepts[0].id, // ICT department
+        departmentId: createdDepts[0].id,
       });
       console.log(`✓ Created book: ${book.title}`);
     }
@@ -241,7 +242,7 @@ async function seed() {
     console.log('✅ Database seeded successfully!');
     console.log('\n📝 Login credentials:');
     console.log('Admin: admin@sliate.ac.lk / admin123');
-    console.log('HOD (ICT): hod.ict@sliate.ac.lk / lecturer123');
+    console.log('HOD (HNDIT): hod.hndit@sliate.ac.lk / lecturer123');
     console.log('Lecturer: lecturer1@sliate.ac.lk / lecturer123');
     console.log('Student: student1@sliate.ac.lk / student123');
     console.log('Staff: staff@sliate.ac.lk / staff123');

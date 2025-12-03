@@ -12,7 +12,7 @@ export const pcStatusEnum = pgEnum("pc_status", ["available", "assigned", "maint
 // Departments
 export const departments = pgTable("departments", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-  code: varchar("code", { length: 10 }).notNull().unique(), // e.g., "ICT", "ENG", "BSM", "AGR", "ACT"
+  code: varchar("code", { length: 10 }).notNull().unique(), // e.g., "HNDIT", "HNDMG", "HNDTHM", "HNDE", "HNDBF"
   name: text("name").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

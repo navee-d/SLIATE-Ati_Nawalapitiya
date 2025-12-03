@@ -100,7 +100,7 @@ npx tsx server/seed.ts
 ```
 
 This creates:
-- Sample departments (ICT, Engineering, Business, Agriculture, Accountancy)
+- Sample departments (HNDIT, HNDMG, HNDTHM, HNDE, HNDBF)
 - An admin user
 - Sample courses, books, and lab equipment
 
@@ -178,9 +178,9 @@ All students are assigned unique IDs in this format:
 DEPT-NAW-YEAR-F/P-NUMBER
 ```
 
-Example: `ICT-NAW-2024-F-0001`
+Example: `HNDIT-NAW-2024-F-0001`
 
-- **DEPT**: Department code (ICT, ENG, BSM, AGR, ACT)
+- **DEPT**: Department code (HNDIT, HNDMG, HNDTHM, HNDE, HNDBF)
 - **NAW**: Nawalapitiya (fixed)
 - **YEAR**: Year of enrollment (e.g., 2024)
 - **F/P**: Full-Time (F) or Part-Time (P)
@@ -188,11 +188,11 @@ Example: `ICT-NAW-2024-F-0001`
 
 ## Departments
 
-1. **ICT** - Information & Communication Technology
-2. **ENG** - Engineering
-3. **BSM** - Business & Management
-4. **AGR** - Agriculture
-5. **ACT** - Accountancy
+1. **HNDIT** - Higher National Diploma in Information Technology
+2. **HNDMG** - Higher National Diploma in Management
+3. **HNDTHM** - Higher National Diploma in Tourism & Hospitality Management
+4. **HNDE** - Higher National Diploma in Engineering
+5. **HNDBF** - Higher National Diploma in Business Finance
 
 ## Development
 

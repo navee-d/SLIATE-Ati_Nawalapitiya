@@ -1,7 +1,7 @@
 /**
  * Student ID Generator for SLIATE Nawalapitiya
  * Format: DEPT-NAW-YEAR-F/P-NUMBER
- * Example: ICT-NAW-2024-F-0208
+ * Example: HNDIT-NAW-2024-F-0208
  */
 
 export interface StudentIDComponents {
@@ -63,16 +63,16 @@ export function validateStudentID(studentId: string): boolean {
 }
 
 export function getDepartmentCodes(): string[] {
-  return ['ICT', 'ENG', 'BSM', 'AGR', 'ACT'];
+  return ['HNDIT', 'HNDMG', 'HNDTHM', 'HNDE', 'HNDBF'];
 }
 
 export function getDepartmentName(code: string): string {
   const names: Record<string, string> = {
-    ICT: 'Information & Communication Technology',
-    ENG: 'Engineering',
-    BSM: 'Business & Management',
-    AGR: 'Agriculture',
-    ACT: 'Accountancy',
+    HNDIT: 'Higher National Diploma in Information Technology',
+    HNDMG: 'Higher National Diploma in Management',
+    HNDTHM: 'Higher National Diploma in Tourism & Hospitality Management',
+    HNDE: 'Higher National Diploma in Engineering',
+    HNDBF: 'Higher National Diploma in Business Finance',
   };
   return names[code] || code;
 }
