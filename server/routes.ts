@@ -1,6 +1,9 @@
 import type { Express, Request, Response, NextFunction } from 'express';
 import { createServer, type Server } from 'http';
 import { storage } from './storage';
+import { db } from './db';
+import { attendanceSessions } from '@shared/schema';
+import { eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { nanoid } from 'nanoid';
@@ -151,6 +154,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ message: 'Logged out successfully' });
   });
 
+  // Change password
+  app.post('/api/auth/change-password', authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const { currentPassword, newPassword } = req.body;
+      
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      const isValid = await bcrypt.compare(currentPassword, user.password);
+      if (!isValid) {
+        return res.status(401).json({ message: 'Current password is incorrect' });
+      }
+
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      await storage.updateUser(req.user.id, { password: hashedPassword });
+
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: 'Changed password',
+        entityType: 'user',
+        entityId: req.user.id,
+      });
+
+      res.json({ message: 'Password changed successfully' });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Update user profile
+  app.put('/api/users/:id', authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.id);
+      
+      // Users can only update their own profile unless they're admin
+      if (req.user.id !== userId && req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Forbidden' });
+      }
+
+      // Don't allow password changes through this endpoint
+      const { password, ...updateData } = req.body;
+      
+      const user = await storage.updateUser(userId, updateData);
+      
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: `Updated user profile: ${user.email}`,
+        entityType: 'user',
+        entityId: user.id,
+      });
+
+      const userData: any = { ...user };
+      delete userData.password;
+      res.json(userData);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Admin stats
   app.get('/api/admin/stats', authenticateToken, requireRole('admin'), async (req: Request, res: Response) => {
     try {
@@ -166,13 +234,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
+      const sessionsToday = await storage.getAttendanceSessionsByDate(today);
+      const totalAttendanceMarks = await storage.countAttendanceMarks();
+
       res.json({
         totalStudents: students.length,
         totalLecturers: lecturers.length,
         totalCourses: courses.length,
         totalDepartments: departments.length,
-        attendanceSessionsToday: 0, // TODO: Filter by today
-        totalAttendanceMarks: 0, // TODO: Get count
+        attendanceSessionsToday: sessionsToday.length,
+        totalAttendanceMarks,
         totalPCs: pcs.length,
         availablePCs: pcs.filter((pc) => pc.status === 'available').length,
         totalBooks: books.reduce((sum, book) => sum + book.quantity, 0),
@@ -208,6 +279,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
         entityId: department.id,
       });
       res.json(department);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Update a department
+  app.put('/api/departments/:id', authenticateToken, requireRole('admin'), async (req: Request, res: Response) => {
+    try {
+      const departmentId = parseInt(req.params.id);
+      const department = await storage.updateDepartment(departmentId, req.body);
+      
+      if (!department) {
+        return res.status(404).json({ message: 'Department not found' });
+      }
+
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: `Updated department: ${department.code}`,
+        entityType: 'department',
+        entityId: department.id,
+      });
+
+      res.json(department);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Delete a department
+  app.delete('/api/departments/:id', authenticateToken, requireRole('admin'), async (req: Request, res: Response) => {
+    try {
+      const departmentId = parseInt(req.params.id);
+      const department = await storage.getDepartment(departmentId);
+      
+      if (!department) {
+        return res.status(404).json({ message: 'Department not found' });
+      }
+
+      await storage.deleteDepartment(departmentId);
+
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: `Deleted department: ${department.code}`,
+        entityType: 'department',
+        entityId: departmentId,
+      });
+
+      res.json({ message: 'Department deleted successfully' });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
@@ -272,11 +391,122 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update a student
+  app.put('/api/students/:id', authenticateToken, requireRole('admin'), async (req: Request, res: Response) => {
+    try {
+      const studentId = parseInt(req.params.id);
+      const student = await storage.updateStudent(studentId, req.body);
+      
+      if (!student) {
+        return res.status(404).json({ message: 'Student not found' });
+      }
+
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: `Updated student: ${student.studentId}`,
+        entityType: 'student',
+        entityId: student.id,
+      });
+
+      res.json(student);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Delete a student
+  app.delete('/api/students/:id', authenticateToken, requireRole('admin'), async (req: Request, res: Response) => {
+    try {
+      const studentId = parseInt(req.params.id);
+      const student = await storage.getStudent(studentId);
+      
+      if (!student) {
+        return res.status(404).json({ message: 'Student not found' });
+      }
+
+      await storage.deleteStudent(studentId);
+
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: `Deleted student: ${student.studentId}`,
+        entityType: 'student',
+        entityId: studentId,
+      });
+
+      res.json({ message: 'Student deleted successfully' });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Lecturer routes
   app.get('/api/lecturers', authenticateToken, async (req: Request, res: Response) => {
     try {
       const lecturers = await storage.getAllLecturers();
       res.json(lecturers);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Create a lecturer
+  app.post('/api/lecturers', authenticateToken, requireRole('admin'), async (req: Request, res: Response) => {
+    try {
+      const { name, email, password, phone, departmentId, employeeId, designation, isHOD } = req.body;
+
+      // Create user first
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const user = await storage.createUser({
+        email,
+        password: hashedPassword,
+        name,
+        role: isHOD ? 'hod' : 'lecturer',
+        departmentId: parseInt(departmentId),
+        phone: phone || null,
+        isActive: true,
+      });
+
+      // Create lecturer record
+      const lecturer = await storage.createLecturer({
+        userId: user.id,
+        employeeId,
+        designation: designation || null,
+        isHOD: isHOD || false,
+        departmentId: parseInt(departmentId),
+      });
+
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: `Created lecturer: ${employeeId}`,
+        entityType: 'lecturer',
+        entityId: lecturer.id,
+      });
+
+      const fullLecturer = await storage.getLecturer(lecturer.id);
+      res.json(fullLecturer);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Update a lecturer
+  app.put('/api/lecturers/:id', authenticateToken, requireRole('admin'), async (req: Request, res: Response) => {
+    try {
+      const lecturerId = parseInt(req.params.id);
+      const lecturer = await storage.updateLecturer(lecturerId, req.body);
+      
+      if (!lecturer) {
+        return res.status(404).json({ message: 'Lecturer not found' });
+      }
+
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: `Updated lecturer: ${lecturer.employeeId}`,
+        entityType: 'lecturer',
+        entityId: lecturer.id,
+      });
+
+      res.json(lecturer);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
@@ -291,11 +521,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const courses = await storage.getCoursesByLecturer(lecturer.id);
       const students = await storage.getAllStudents();
+      
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const sessionsToday = await storage.getAttendanceSessionsByDate(today);
+      const lecturerSessionsToday = sessionsToday.filter(s => s.lecturerId === lecturer.id);
 
       res.json({
         totalCourses: courses.length,
         totalStudents: students.filter((s) => s.department.id === lecturer.departmentId).length,
-        sessionsToday: 0, // TODO: Filter by today
+        sessionsToday: lecturerSessionsToday.length,
       });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -321,6 +556,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const courses = await storage.getAllCourses();
       res.json(courses);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Create a course
+  app.post('/api/courses', authenticateToken, requireRole('admin', 'hod'), async (req: Request, res: Response) => {
+    try {
+      const course = await storage.createCourse(req.body);
+      
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: `Created course: ${course.code} - ${course.name}`,
+        entityType: 'course',
+        entityId: course.id,
+      });
+
+      res.json(course);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Update a course
+  app.put('/api/courses/:id', authenticateToken, requireRole('admin', 'hod'), async (req: Request, res: Response) => {
+    try {
+      const courseId = parseInt(req.params.id);
+      const course = await storage.updateCourse(courseId, req.body);
+      
+      if (!course) {
+        return res.status(404).json({ message: 'Course not found' });
+      }
+
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: `Updated course: ${course.code} - ${course.name}`,
+        entityType: 'course',
+        entityId: course.id,
+      });
+
+      res.json(course);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Delete a course
+  app.delete('/api/courses/:id', authenticateToken, requireRole('admin'), async (req: Request, res: Response) => {
+    try {
+      const courseId = parseInt(req.params.id);
+      const course = await storage.getCourse(courseId);
+      
+      if (!course) {
+        return res.status(404).json({ message: 'Course not found' });
+      }
+
+      await storage.deleteCourse(courseId);
+
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: `Deleted course: ${course.code} - ${course.name}`,
+        entityType: 'course',
+        entityId: courseId,
+      });
+
+      res.json({ message: 'Course deleted successfully' });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
@@ -377,6 +678,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sessionId = parseInt(req.params.id);
       await storage.closeAttendanceSession(sessionId);
       res.json({ message: 'Session closed' });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Get all attendance sessions
+  app.get('/api/attendance/sessions', authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const activeSessions = await storage.getActiveSessions();
+      res.json(activeSessions);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Refresh QR token for a session
+  app.post('/api/attendance/sessions/:id/refresh', authenticateToken, requireRole('lecturer', 'hod'), async (req: Request, res: Response) => {
+    try {
+      const sessionId = parseInt(req.params.id);
+      const session = await storage.refreshAttendanceSessionToken(sessionId);
+      
+      if (!session) {
+        return res.status(404).json({ message: 'Session not found' });
+      }
+      
+      res.json({ message: 'Token refreshed successfully', session });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
@@ -452,8 +779,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const activeLoans = await storage.getActiveBookLoansByUser(req.user.id);
       const examApplications = await storage.getExamApplicationsByStudent(student.id);
 
+      const attendanceRate = await storage.calculateAttendanceRate(student.id);
+
       res.json({
-        attendanceRate: 85, // TODO: Calculate actual rate
+        attendanceRate,
         activeLoans: activeLoans.length,
         examApplications: examApplications.length,
       });
@@ -531,6 +860,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Return a book
+  app.post('/api/library/loans/:id/return', authenticateToken, requireRole('admin', 'staff'), async (req: Request, res: Response) => {
+    try {
+      const loanId = parseInt(req.params.id);
+      const loan = await storage.getBookLoan(loanId);
+      
+      if (!loan) {
+        return res.status(404).json({ message: 'Loan not found' });
+      }
+
+      if (loan.status === 'returned') {
+        return res.status(400).json({ message: 'Book already returned' });
+      }
+
+      await storage.returnBook(loanId);
+      await storage.updateBookQuantity(loan.bookId, 1);
+
+      // Import export service to calculate fine
+      const { exportService } = await import('./services/export');
+      const fine = exportService.calculateLoanFine(loan);
+
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: `Book returned: ${loan.book?.title || 'Unknown'}, Fine: Rs. ${fine}`,
+        entityType: 'book_loan',
+        entityId: loanId,
+      });
+
+      res.json({ message: 'Book returned successfully', fine });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Update a book
+  app.put('/api/library/books/:id', authenticateToken, requireRole('admin', 'staff'), async (req: Request, res: Response) => {
+    try {
+      const bookId = parseInt(req.params.id);
+      const book = await storage.updateBook(bookId, req.body);
+      
+      if (!book) {
+        return res.status(404).json({ message: 'Book not found' });
+      }
+
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: `Updated book: ${book.title}`,
+        entityType: 'book',
+        entityId: book.id,
+      });
+
+      res.json(book);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Delete a book
+  app.delete('/api/library/books/:id', authenticateToken, requireRole('admin'), async (req: Request, res: Response) => {
+    try {
+      const bookId = parseInt(req.params.id);
+      const book = await storage.getBook(bookId);
+      
+      if (!book) {
+        return res.status(404).json({ message: 'Book not found' });
+      }
+
+      await storage.deleteBook(bookId);
+
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: `Deleted book: ${book.title}`,
+        entityType: 'book',
+        entityId: bookId,
+      });
+
+      res.json({ message: 'Book deleted successfully' });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Lab routes
   app.get('/api/labs', authenticateToken, async (req: Request, res: Response) => {
     try {
@@ -556,6 +967,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update a lab
+  app.put('/api/labs/:id', authenticateToken, requireRole('admin', 'staff'), async (req: Request, res: Response) => {
+    try {
+      const labId = parseInt(req.params.id);
+      const lab = await storage.updateLab(labId, req.body);
+      
+      if (!lab) {
+        return res.status(404).json({ message: 'Lab not found' });
+      }
+
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: `Updated lab: ${lab.name}`,
+        entityType: 'lab',
+        entityId: lab.id,
+      });
+
+      res.json(lab);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Delete a lab
+  app.delete('/api/labs/:id', authenticateToken, requireRole('admin'), async (req: Request, res: Response) => {
+    try {
+      const labId = parseInt(req.params.id);
+      const lab = await storage.getLab(labId);
+      
+      if (!lab) {
+        return res.status(404).json({ message: 'Lab not found' });
+      }
+
+      await storage.deleteLab(labId);
+
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: `Deleted lab: ${lab.name}`,
+        entityType: 'lab',
+        entityId: labId,
+      });
+
+      res.json({ message: 'Lab deleted successfully' });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   app.get('/api/labs/pcs', authenticateToken, async (req: Request, res: Response) => {
     try {
       const pcs = await storage.getAllPCs();
@@ -575,6 +1034,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
         entityId: pc.id,
       });
       res.json(pc);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Update a PC
+  app.put('/api/labs/pcs/:id', authenticateToken, requireRole('admin', 'staff'), async (req: Request, res: Response) => {
+    try {
+      const pcId = parseInt(req.params.id);
+      const pc = await storage.updatePC(pcId, req.body);
+      
+      if (!pc) {
+        return res.status(404).json({ message: 'PC not found' });
+      }
+
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: `Updated PC: ${pc.pcNumber}`,
+        entityType: 'pc',
+        entityId: pc.id,
+      });
+
+      res.json(pc);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Assign a PC to a user
+  app.post('/api/labs/pcs/:id/assign', authenticateToken, requireRole('admin', 'staff'), async (req: Request, res: Response) => {
+    try {
+      const pcId = parseInt(req.params.id);
+      const { userId } = req.body;
+      
+      const pc = await storage.updatePC(pcId, {
+        assignedTo: userId,
+        status: 'assigned',
+      });
+      
+      if (!pc) {
+        return res.status(404).json({ message: 'PC not found' });
+      }
+
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: `Assigned PC ${pc.pcNumber} to user ${userId}`,
+        entityType: 'pc',
+        entityId: pc.id,
+      });
+
+      res.json({ message: 'PC assigned successfully', pc });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Unassign a PC
+  app.post('/api/labs/pcs/:id/unassign', authenticateToken, requireRole('admin', 'staff'), async (req: Request, res: Response) => {
+    try {
+      const pcId = parseInt(req.params.id);
+      
+      const pc = await storage.updatePC(pcId, {
+        assignedTo: null,
+        status: 'available',
+      });
+      
+      if (!pc) {
+        return res.status(404).json({ message: 'PC not found' });
+      }
+
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: `Unassigned PC ${pc.pcNumber}`,
+        entityType: 'pc',
+        entityId: pc.id,
+      });
+
+      res.json({ message: 'PC unassigned successfully', pc });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
@@ -613,6 +1150,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Review (approve/reject) exam application
+  app.put('/api/exams/applications/:id/review', authenticateToken, requireRole('admin', 'hod'), async (req: Request, res: Response) => {
+    try {
+      const applicationId = parseInt(req.params.id);
+      const { status } = req.body; // 'approved' or 'rejected'
+      
+      if (!['approved', 'rejected'].includes(status)) {
+        return res.status(400).json({ message: 'Invalid status. Must be "approved" or "rejected"' });
+      }
+
+      await storage.updateExamApplicationStatus(applicationId, status, req.user.id);
+
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: `${status === 'approved' ? 'Approved' : 'Rejected'} exam application ${applicationId}`,
+        entityType: 'exam_application',
+        entityId: applicationId,
+      });
+
+      // Get application details to send notification
+      const application = await storage.getAllExamApplications();
+      const app = application.find(a => a.id === applicationId);
+      
+      if (app?.student?.user?.phone) {
+        const { notificationService } = await import('./services/notification');
+        await notificationService.sendExamApplicationUpdate(
+          app.student.user.phone,
+          app.student.user.name,
+          app.course?.name || 'Unknown Course',
+          status
+        );
+      }
+
+      res.json({ message: `Application ${status}` });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Get student's own exam applications
+  app.get('/api/student/exam-applications', authenticateToken, requireRole('student'), async (req: Request, res: Response) => {
+    try {
+      const student = await storage.getStudentByUserId(req.user.id);
+      if (!student) {
+        return res.status(404).json({ message: 'Student not found' });
+      }
+
+      const applications = await storage.getExamApplicationsByStudent(student.id);
+      res.json(applications);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Payment routes
   app.get('/api/payments', authenticateToken, async (req: Request, res: Response) => {
     try {
@@ -636,11 +1227,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const paymentId = parseInt(req.params.id);
       
-      // TODO: Integrate with Twilio/WhatsApp
-      // This is a placeholder for SMS sending functionality
+      const allPayments = await storage.getAllPayments();
+      const payment = allPayments.find(p => p.id === paymentId);
+      
+      if (!payment) {
+        return res.status(404).json({ message: 'Payment not found' });
+      }
+
+      if (payment.user?.phone) {
+        const { notificationService } = await import('./services/notification');
+        await notificationService.sendPaymentConfirmation(
+          payment.user.phone,
+          payment.user.name,
+          payment.amount,
+          payment.paymentType
+        );
+      }
+
       await storage.markPaymentSMSSent(paymentId);
 
-      res.json({ message: 'SMS notification sent (placeholder)' });
+      res.json({ message: 'SMS notification sent' });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
@@ -831,6 +1437,141 @@ export async function registerRoutes(app: Express): Promise<Server> {
         columnsFound: actualKeys,
         errors: failed,
       });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Anti-cheat settings routes
+  app.get('/api/admin/anti-cheat/:departmentId', authenticateToken, requireRole('admin', 'hod'), async (req: Request, res: Response) => {
+    try {
+      const departmentId = parseInt(req.params.departmentId);
+      const settings = await storage.getAntiCheatSettings(departmentId);
+      
+      if (!settings) {
+        return res.status(404).json({ message: 'Anti-cheat settings not found for this department' });
+      }
+
+      res.json(settings);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.put('/api/admin/anti-cheat/:departmentId', authenticateToken, requireRole('admin', 'hod'), async (req: Request, res: Response) => {
+    try {
+      const departmentId = parseInt(req.params.departmentId);
+      const settings = await storage.upsertAntiCheatSettings({
+        departmentId,
+        ...req.body,
+      });
+
+      await storage.createAuditLog({
+        userId: req.user.id,
+        action: `Updated anti-cheat settings for department ${departmentId}`,
+        entityType: 'anti_cheat_settings',
+        entityId: settings.id,
+      });
+
+      res.json(settings);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Audit logs route
+  app.get('/api/admin/audit-logs', authenticateToken, requireRole('admin'), async (req: Request, res: Response) => {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 100;
+      const logs = await storage.getAuditLogs(limit);
+      res.json(logs);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Export routes
+  app.get('/api/export/students', authenticateToken, requireRole('admin'), async (req: Request, res: Response) => {
+    try {
+      const format = (req.query.format as string) || 'xlsx';
+      const students = await storage.getAllStudents();
+      
+      const { exportService } = await import('./services/export');
+      const formattedData = exportService.formatStudentsForExport(students);
+      const buffer = exportService.exportToFile(formattedData, { format: format as 'csv' | 'xlsx' });
+
+      const filename = `students_export_${new Date().toISOString().split('T')[0]}.${format}`;
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Type', format === 'csv' ? 'text/csv' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.send(buffer);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get('/api/export/attendance/:courseId', authenticateToken, requireRole('admin', 'lecturer', 'hod'), async (req: Request, res: Response) => {
+    try {
+      const courseId = parseInt(req.params.courseId);
+      const format = (req.query.format as string) || 'xlsx';
+      
+      // Get all attendance sessions for this course
+      const allSessions = await db
+        .select()
+        .from(attendanceSessions)
+        .where(eq(attendanceSessions.courseId, courseId));
+      
+      // Get all attendance marks for these sessions
+      const sessionIds = allSessions.map(s => s.id);
+      const allMarks: any[] = [];
+      for (const sessionId of sessionIds) {
+        const marks = await storage.getAttendanceMarksBySession(sessionId);
+        allMarks.push(...marks);
+      }
+
+      const { exportService } = await import('./services/export');
+      const formattedData = exportService.formatAttendanceForExport(allSessions, allMarks);
+      const buffer = exportService.exportToFile(formattedData, { format: format as 'csv' | 'xlsx' });
+
+      const filename = `attendance_course_${courseId}_${new Date().toISOString().split('T')[0]}.${format}`;
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Type', format === 'csv' ? 'text/csv' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.send(buffer);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get('/api/export/library/loans', authenticateToken, requireRole('admin', 'staff'), async (req: Request, res: Response) => {
+    try {
+      const format = (req.query.format as string) || 'xlsx';
+      const loans = await storage.getAllBookLoans();
+      
+      const { exportService } = await import('./services/export');
+      const formattedData = exportService.formatLibraryLoansForExport(loans);
+      const buffer = exportService.exportToFile(formattedData, { format: format as 'csv' | 'xlsx' });
+
+      const filename = `library_loans_${new Date().toISOString().split('T')[0]}.${format}`;
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Type', format === 'csv' ? 'text/csv' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.send(buffer);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get('/api/export/payments', authenticateToken, requireRole('admin'), async (req: Request, res: Response) => {
+    try {
+      const format = (req.query.format as string) || 'xlsx';
+      const payments = await storage.getAllPayments();
+      
+      const { exportService } = await import('./services/export');
+      const formattedData = exportService.formatPaymentsForExport(payments);
+      const buffer = exportService.exportToFile(formattedData, { format: format as 'csv' | 'xlsx' });
+
+      const filename = `payments_export_${new Date().toISOString().split('T')[0]}.${format}`;
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Type', format === 'csv' ? 'text/csv' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.send(buffer);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
