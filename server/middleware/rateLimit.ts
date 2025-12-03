@@ -12,6 +12,16 @@ interface RateLimitStore {
 
 const store: RateLimitStore = {};
 
+// Cleanup expired entries every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  Object.keys(store).forEach(k => {
+    if (store[k].resetTime < now) {
+      delete store[k];
+    }
+  });
+}, 5 * 60 * 1000);
+
 /**
  * Simple in-memory rate limiter
  * For production, use a proper rate limiting library like express-rate-limit with Redis
@@ -24,15 +34,6 @@ export function rateLimit(options: {
   return (req: Request, res: Response, next: NextFunction) => {
     const key = `${req.ip}-${req.path}`;
     const now = Date.now();
-    
-    // Clean up expired entries periodically
-    if (Math.random() < 0.01) {
-      Object.keys(store).forEach(k => {
-        if (store[k].resetTime < now) {
-          delete store[k];
-        }
-      });
-    }
     
     if (!store[key] || store[key].resetTime < now) {
       store[key] = {

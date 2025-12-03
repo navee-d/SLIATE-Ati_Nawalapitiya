@@ -11,6 +11,8 @@ import { generateStudentID } from '../shared/student-id-generator';
 import multer from 'multer';
 import * as XLSX from 'xlsx';
 import { authLimiter } from './middleware/rateLimit';
+import { notificationService } from './services/notification';
+import { exportService } from './services/export';
 
 if (!process.env.SESSION_SECRET) {
   throw new Error('SESSION_SECRET environment variable must be set');
@@ -904,7 +906,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateBookQuantity(loan.bookId, 1);
 
       // Import export service to calculate fine
-      const { exportService } = await import('./services/export');
+      
       const fine = exportService.calculateLoanFine(loan);
 
       await storage.createAuditLog({
@@ -1199,7 +1201,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const application = await storage.getExamApplication(applicationId);
       
       if (application?.student?.user?.phone) {
-        const { notificationService } = await import('./services/notification');
+        
         await notificationService.sendExamApplicationUpdate(
           application.student.user.phone,
           application.student.user.name,
@@ -1259,7 +1261,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       if (payment.user?.phone) {
-        const { notificationService } = await import('./services/notification');
+        
         await notificationService.sendPaymentConfirmation(
           payment.user.phone,
           payment.user.name,
@@ -1520,7 +1522,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const format = (req.query.format as string) || 'xlsx';
       const students = await storage.getAllStudents();
       
-      const { exportService } = await import('./services/export');
+      
       const formattedData = exportService.formatStudentsForExport(students);
       const buffer = exportService.exportToFile(formattedData, { format: format as 'csv' | 'xlsx' });
 
@@ -1552,7 +1554,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         allMarks.push(...marks);
       }
 
-      const { exportService } = await import('./services/export');
+      
       const formattedData = exportService.formatAttendanceForExport(allSessions, allMarks);
       const buffer = exportService.exportToFile(formattedData, { format: format as 'csv' | 'xlsx' });
 
@@ -1570,7 +1572,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const format = (req.query.format as string) || 'xlsx';
       const loans = await storage.getAllBookLoans();
       
-      const { exportService } = await import('./services/export');
+      
       const formattedData = exportService.formatLibraryLoansForExport(loans);
       const buffer = exportService.exportToFile(formattedData, { format: format as 'csv' | 'xlsx' });
 
@@ -1588,7 +1590,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const format = (req.query.format as string) || 'xlsx';
       const payments = await storage.getAllPayments();
       
-      const { exportService } = await import('./services/export');
+      
       const formattedData = exportService.formatPaymentsForExport(payments);
       const buffer = exportService.exportToFile(formattedData, { format: format as 'csv' | 'xlsx' });
 

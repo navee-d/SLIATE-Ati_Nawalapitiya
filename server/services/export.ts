@@ -120,7 +120,7 @@ class ExportService {
     if (today <= dueDate) return 0;
 
     const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-    const finePerDay = parseInt(process.env.LIBRARY_FINE_PER_DAY || '5'); // Default Rs. 5 per day
+    const finePerDay = parseInt(process.env.LIBRARY_FINE_PER_DAY || '5', 10); // Default Rs. 5 per day
     
     return daysOverdue * finePerDay;
   }

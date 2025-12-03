@@ -268,7 +268,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateLecturer(id: number, updateData: Partial<InsertLecturer>): Promise<Lecturer | undefined> {
     const [lecturer] = await db.update(lecturers).set(updateData).where(eq(lecturers.id, id)).returning();
-    return lecturer;
+    return lecturer || undefined;
   }
 
   async deleteLecturer(id: number): Promise<boolean> {
@@ -544,11 +544,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createBook(insertBook: InsertBook): Promise<Book> {
-    const bookData: any = {
+    // Ensure availableQuantity is set properly
+    const bookWithAvailability = {
       ...insertBook,
       availableQuantity: insertBook.availableQuantity ?? insertBook.quantity ?? 1,
-    };
-    const [book] = await db.insert(books).values(bookData).returning();
+    } as InsertBook;
+    
+    const [book] = await db.insert(books).values(bookWithAvailability).returning();
     return book;
   }
 
